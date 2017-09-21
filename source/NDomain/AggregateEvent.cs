@@ -15,21 +15,23 @@ namespace NDomain
         readonly string aggregateId;
         readonly int sequenceId;
         readonly DateTime dateUtc;
+        readonly string aggregateName;
         readonly string name;
         readonly T payload;
 
-        public AggregateEvent(string aggregateId, int sequenceId, DateTime dateUtc, string name, T payload)
+        public AggregateEvent(string aggregateId, string aggregateName, int sequenceId, DateTime dateUtc, string name, T payload)
         {
             this.aggregateId = aggregateId;
             this.sequenceId = sequenceId;
 
             this.dateUtc = dateUtc;
+            this.aggregateName = aggregateName;
             this.name = name;
             this.payload = payload;
         }
 
-        public AggregateEvent(string aggregateId, int sequenceId, DateTime dateUtc, T payload)
-            : this(aggregateId, sequenceId, dateUtc, typeof(T).Name, payload)
+        public AggregateEvent(string aggregateId, string aggregateName, int sequenceId, DateTime dateUtc, T payload)
+            : this(aggregateId, aggregateName, sequenceId, dateUtc, typeof(T).Name, payload)
         {
 
         }
@@ -38,6 +40,7 @@ namespace NDomain
         public int SequenceId { get { return this.sequenceId; } }
 
         public DateTime DateUtc { get { return this.dateUtc; } }
+        public string AggregateName { get { return this.aggregateName; } }
         public string Name { get { return this.name; } }
         public T Payload { get { return this.payload; } }
 

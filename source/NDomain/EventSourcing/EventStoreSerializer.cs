@@ -32,6 +32,7 @@ namespace NDomain.EventSourcing
 
             this.serializers[name] = e => new AggregateEvent<JObject>(
                                                 e.AggregateId,
+                                                e.AggregateName,
                                                 e.SequenceId,
                                                 e.DateUtc,
                                                 e.Name,
@@ -39,6 +40,7 @@ namespace NDomain.EventSourcing
 
             this.deserializers[name] = e => new AggregateEvent<TEvent>(
                                                 e.AggregateId,
+                                                e.AggregateName,
                                                 e.SequenceId,
                                                 e.DateUtc,
                                                 e.Payload.ToObject<TEvent>());

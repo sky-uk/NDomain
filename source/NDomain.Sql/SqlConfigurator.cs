@@ -9,7 +9,8 @@ namespace NDomain.Sql
             this EventSourcingConfigurator configurator,
             string connectionString)
         {
-            return configurator.WithSqlServerStorage(connectionString, SqlObjectNames.Default);
+            configurator.EventStoreDb = new SqlEventStoreDb(connectionString);
+            return configurator;
         }
 
         public static EventSourcingConfigurator WithSqlServerStorage(

@@ -1,12 +1,6 @@
-﻿using NDomain.Bus;
-using NDomain.IoC;
-using NDomain.Bus.Transport;
+﻿using NDomain.Bus.Transport;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using NDomain.CQRS;
 
 namespace NDomain.CQRS.Handlers
 {
@@ -20,7 +14,7 @@ namespace NDomain.CQRS.Handlers
     {
         public EventMessageHandler(Func<THandler, IEvent<T>, Task> handlerFunc,
                                    THandler instance = null)
-            :base(handlerFunc, instance)
+            : base(handlerFunc, instance)
         {
             
         }
@@ -28,7 +22,8 @@ namespace NDomain.CQRS.Handlers
         protected override IEvent<T> CreateMessage(TransportMessage message)
         {
             return new Event<T>(
-                        DateTime.FromBinary(long.Parse(message.Headers[CqrsMessageHeaders.DateUtc])), 
+                        DateTime.FromBinary(long.Parse(message.Headers[CqrsMessageHeaders.DateUtc])),
+                        int.Parse(message.Headers[CqrsMessageHeaders.SequenceId]),
                         message.Body.ToObject<T>());
         }
     }

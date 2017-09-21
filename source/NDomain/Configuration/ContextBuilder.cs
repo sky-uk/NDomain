@@ -33,12 +33,13 @@ namespace NDomain.Configuration
         internal IoCConfigurator IoCConfigurator { get; private set; }
 
         // using Lazy's to avoid managing dependencies between configurators and to ensure no circular references exist
+        internal Lazy<IEventStoreDb> EventStoreDb { get; set; }
         internal Lazy<IEventStore> EventStore { get; set; }
         internal Lazy<IMessageBus> MessageBus { get; set; }
         internal Lazy<ISubscriptionManager> SubscriptionManager { get; set; }
         internal Lazy<IEnumerable<IProcessor>> Processors { get; set; }
         internal Lazy<ILoggerFactory> LoggerFactory { get; set; }
-        internal Lazy<IDependencyResolver> Resolver { get; set; }
+        internal Lazy<IDependencyResolver> Resolver { get; set; }        
 
         internal event Action<ContextBuilder> Configuring;
         internal event Action<DomainContext> Configured;
@@ -54,7 +55,8 @@ namespace NDomain.Configuration
                 this.Configuring(this);
             }
 
-            var context = new DomainContext(this.EventStore.Value,
+            var context = new DomainContext(this.EventStoreDb.Value,
+                                            this.EventStore.Value,
                                             new EventBus(this.MessageBus.Value),
                                             new CommandBus(this.MessageBus.Value),
                                             this.Processors.Value,

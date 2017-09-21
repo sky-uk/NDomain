@@ -61,10 +61,14 @@ namespace NDomain.Configuration
         {
             var serializer = EventStoreSerializer.FromAggregateTypes(this.aggregateTypes);
 
+            builder.EventStoreDb = new Lazy<IEventStoreDb>(
+                () => this.EventStoreDb ?? new LocalEventStore());
+
             builder.EventStore = new Lazy<IEventStore>(
-                () => new EventStore(this.EventStoreDb ?? new LocalEventStore(),
+                () => new EventStore(builder.EventStoreDb.Value,
                                      new EventBus(builder.MessageBus.Value),
-                                     serializer));
+                                     serializer,
+                                     builder.LoggerFactory.Value));
         }
     }
 }

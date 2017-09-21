@@ -1,11 +1,6 @@
 ﻿using Autofac;
 using NDomain.Autofac;
-using NDomain.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NDomain.CQRS.Projections;
 
 namespace NDomain.Configuration
 {
@@ -35,8 +30,18 @@ namespace NDomain.Configuration
                 builder.RegisterInstance(context.CommandBus);
                 builder.RegisterInstance(context.EventBus);
                 builder.RegisterInstance(context.EventStore).As<IEventStore>();
+                builder.RegisterInstance(context.LoggerFactory);
                 builder.RegisterGeneric(typeof(AggregateRepository<>))
-                       .As(typeof(IAggregateRepository<>)).SingleInstance();
+                       .As(typeof(IAggregateRepository<>))
+                       .SingleInstance();
+                builder
+                    .RegisterInstance(context.EventStoreDb)
+                    .AsSelf()
+                    .AsImplementedInterfaces();
+                builder
+                    .RegisterGeneric(typeof(QueryEventsHandler<>))
+                    .AsImplementedInterfaces()
+                    .InstancePerDependency();
 
                 // usually command/event handlers
                 foreach (var knownType in b.KnownTypes)
@@ -45,6 +50,7 @@ namespace NDomain.Configuration
                            .AsSelf()
                            .PreserveExistingDefaults();
                 }
+
 
                 builder.Update(container);
             };

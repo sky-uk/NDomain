@@ -33,9 +33,12 @@ namespace NDomain.CQRS
 
         private Message BuildMessage(ICommand command)
         {
+            var correlationId = DomainTransaction.Current?.CorrelationId ?? Guid.NewGuid().ToString();
+
             var headers = new Dictionary<string, string>
             {
-                { Bus.MessageHeaders.Id, command.Id },
+                { MessageHeaders.Id, command.Id },
+                { MessageHeaders.CorrelationId, correlationId },
             };
 
             var message = new Message(command.Payload, command.Name, headers);

@@ -2,8 +2,9 @@
 {
     public class SqlObjectNames
     {
-        public static readonly SqlObjectNames Default =
-            new SqlObjectNames("ndomain", "Aggregates", "Events");
+        public string SchemaName { get; set; }
+        public string AggregateTableName { get; set; }
+        public string EventTableName { get; set; }
 
         public SqlObjectNames(string schemaName, string aggregateTableName, string eventTableName)
         {
@@ -11,9 +12,5 @@
             AggregateTableName = aggregateTableName;
             EventTableName = eventTableName;
         }
-
-        public string SchemaName { get; private set; }
-        public string AggregateTableName { get; private set; }
-        public string EventTableName { get; private set; }
     }
 }

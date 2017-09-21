@@ -18,16 +18,17 @@ namespace NDomain
     {
         // TODO: rename to MessageContextScope
 
-        public DomainTransactionScope(string transactionId, int retryCount)
+        public DomainTransactionScope(string transactionId, string correlationId, int retryCount)
         {
-            CallContext.LogicalSetData("ndomain:transaction", new DomainTransaction(transactionId, retryCount));
+            CallContext.LogicalSetData("cqrs:transaction", 
+                new DomainTransaction(transactionId, correlationId, retryCount));
         }
 
         public void Dispose()
         {
             if (DomainTransaction.Current != null)
             {
-                CallContext.LogicalSetData("ndomain:transaction", null);
+                CallContext.LogicalSetData("cqrs:transaction", null);
             }
         }
     }
@@ -40,15 +41,18 @@ namespace NDomain
         // TODO: rename to MessageContext
 
         readonly string id;
+        readonly string correlationId;
         readonly int deliveryCount;
 
-        internal DomainTransaction(string id, int deliveryCount)
+        internal DomainTransaction(string id, string correlationId, int deliveryCount)
         {
             this.id = id;
+            this.correlationId = correlationId;
             this.deliveryCount = deliveryCount;
         }
 
         public string Id { get { return this.id; } }
+        public string CorrelationId { get { return this.correlationId; } }
         public int DeliveryCount { get { return this.deliveryCount; } }
 
         /// <summary>

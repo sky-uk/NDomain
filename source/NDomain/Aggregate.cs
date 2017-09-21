@@ -36,6 +36,15 @@ namespace NDomain
         public IEnumerable<IAggregateEvent> Changes { get { return this.events; } }
 
         /// <summary>
+        /// Clears the Changes collection.
+        /// </summary>
+        /// <remarks>The use of this method should be restricted to unit testing.</remarks>
+        public void ClearChanges()
+        {
+            this.events.Clear();
+        }
+
+        /// <summary>
         /// Updates the aggregate State by applying the event. 
         /// A new IAggregateEvent is added to the Changes collection, having the event as its payload.
         /// </summary>
@@ -44,7 +53,7 @@ namespace NDomain
         protected void On<T>(T ev)
         {
             var sequenceId = this.originalVersion + this.events.Count + 1;
-            var @event = new AggregateEvent<T>(this.id, sequenceId, DateTime.UtcNow, ev);
+            var @event = new AggregateEvent<T>(this.id, this.GetType().Name, sequenceId, DateTime.UtcNow, ev);
 
             this.state.Mutate(@event);
             this.events.Add(@event);

@@ -1,8 +1,4 @@
-﻿using NDomain.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace NDomain.CQRS.Projections
@@ -15,46 +11,26 @@ namespace NDomain.CQRS.Projections
     /// </summary>
     /// <remarks>This is still experimental work and most likely will undergo changes in newer versions.</remarks>
     /// <typeparam name="T"></typeparam>
-    public abstract class QueryEventsHandler<T>
+    public class QueryEventsHandler<T> : IQueryEventHandler<T>, IQueryConsolidator<T>
         where T : new()
     {
-        static readonly TimeSpan WaitForPreviousVersionTimeout = TimeSpan.FromSeconds(1);
+        private readonly IQueryStore<T> queryStore;
+        private readonly IEventStore eventStore;
+        private readonly IQueryMutator<T> mutator;
 
-        readonly Dictionary<string, Action<T, IAggregateEvent>> handlers;
-
-        readonly IQueryStore<T> queryStore;
-        readonly IEventStore eventStore;
-
-
-        protected QueryEventsHandler(IQueryStore<T> queryStore, IEventStore eventStore)
+        public QueryEventsHandler(IQueryStore<T> queryStore, IEventStore eventStore, IQueryMutator<T> mutator)
         {
             this.queryStore = queryStore;
             this.eventStore = eventStore;
-
-            this.handlers = ReflectionUtils.FindQueryEventHandlerMethods<T>(this);
+            this.mutator = mutator;
         }
 
-        private bool TryGetEventHandler(string name, out Action<T, IAggregateEvent> handler)
+        public async Task OnEvent(IAggregateEvent ev, string queryId = null)
         {
-            return this.handlers.TryGetValue(name, out handler);
-        }
-
-        private Action<T, IAggregateEvent> GetEventHandler(string name)
-        {
-            return this.handlers[name];
-        }
-
-        protected async Task OnEvent(IAggregateEvent ev, string queryId = null)
-        {
-            var eventHandler = this.GetEventHandler(ev.Name);
             queryId = queryId ?? ev.AggregateId;
+            var query = await queryStore.Get(queryId);
 
-            var expectedPreviousVersion = ev.SequenceId - 1;
-
-            var query = await this.queryStore.GetOrWaitUntil(
-                                                queryId, 
-                                                expectedPreviousVersion, 
-                                                WaitForPreviousVersionTimeout);
+            var data = query.Data;
 
             if (query.Version >= ev.SequenceId)
             {
@@ -62,35 +38,62 @@ namespace NDomain.CQRS.Projections
                 return;
             }
 
-            if (query.Version == 0)
+            int originalVersion = query.Version;
+            if (originalVersion < ev.SequenceId - 1)
             {
-                query.Data = new T();
+                // fastforward to the current event's version
+                query = await FastForward(query, ev.SequenceId);
+            }
+            else
+            {
+                // query is sync, just apply the event
+                var eventHandler = mutator.GetEventHandler(ev);
+                query.Data = eventHandler(data, ev);
+                query.Version = ev.SequenceId;
+                query.DateUtc = DateTime.UtcNow;
             }
 
-            if (query.Version < ev.SequenceId - 1)
-            {
-                var start = query.Version + 1;
-                var end = ev.SequenceId - 1;
-                var events = await this.eventStore.LoadRange(ev.AggregateId, start, end);
-
-                foreach (var @event in events)
-                {
-                    Action<T, IAggregateEvent> evHandler;
-                    if (this.TryGetEventHandler(@event.Name, out evHandler))
-                    {
-                        evHandler(query.Data, @event);
-                    }
-                }
-            }
-
-            eventHandler(query.Data, ev);
-
-            query.Version = ev.SequenceId;
-            query.DateUtc = DateTime.UtcNow;
-
-            await this.queryStore.Set(queryId, query);
+            await queryStore.Set(queryId, query, originalVersion);
         }
 
+        public async Task Consolidate(string aggregateId)
+        {
+            var query = await queryStore.Get(aggregateId);
+            var originalVersion = query.Version;
+            var updatedQuery = await FastForward(query, int.MaxValue);
 
+            if (updatedQuery.Version <= query.Version)
+            {
+                //Nothing to do as we're already at the latest version
+                return;
+            }
+
+            await queryStore.Set(query.Id, updatedQuery, originalVersion);
+        }
+
+        private async Task<Query<T>> FastForward(Query<T> query, int maxVersion)
+        {
+            var start = query.Version + 1;
+            var events = await eventStore
+                .LoadRangeWithoutCheckingUncommitted(query.Id, start, maxVersion);
+
+            var data = query.Data;
+            int lastVersion = 0;
+
+            foreach (var @event in events)
+            {
+                var evHandler = mutator.GetEventHandler(@event);
+                data = evHandler(data, @event);
+                lastVersion = @event.SequenceId;
+            }
+
+            return new Query<T>
+            {
+                Data = data,
+                DateUtc = DateTime.UtcNow,
+                Id = query.Id,
+                Version = lastVersion
+            };
+        }
     }
 }

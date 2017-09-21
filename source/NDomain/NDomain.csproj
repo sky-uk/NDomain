@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NDomain</RootNamespace>
     <AssemblyName>NDomain</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -86,6 +87,12 @@
     <Compile Include="CQRS\EventBus.cs" />
     <Compile Include="CQRS\CqrsMessageHeaders.cs" />
     <Compile Include="CQRS\Handlers\MessageHandlerBase.cs" />
+    <Compile Include="CQRS\Projections\IQueryConsolidator.cs" />
+    <Compile Include="CQRS\Projections\IQueryEventHandler.cs" />
+    <Compile Include="CQRS\Projections\IQueryMutator.cs" />
+    <Compile Include="CQRS\Projections\QueryMutator.cs" />
+    <Compile Include="Exceptions\AggregateNotFoundException.cs" />
+    <Compile Include="IAggregateListRepository.cs" />
     <Compile Include="Helpers\CollectionExtensions.cs" />
     <Compile Include="IAggregateEvent.cs" />
     <Compile Include="IAggregateFactory.cs" />

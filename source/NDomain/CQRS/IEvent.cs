@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NDomain.CQRS
 {
@@ -20,6 +16,11 @@ namespace NDomain.CQRS
         /// Name of the message, usually the name of the Payload's Type
         /// </summary>
         string Name { get; }
+
+        /// <summary>
+        /// Uniquely identifies an event in the event stream.
+        /// </summary>
+        int SequenceId { get; }
 
         /// <summary>
         /// Payload of the event

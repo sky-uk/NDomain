@@ -154,9 +154,17 @@ namespace NDomain.Bus
 
             try
             {
-                using (new DomainTransactionScope(transaction.Message.Id, transaction.DeliveryCount))
+                using (new DomainTransactionScope(
+                    transaction.Message.Id,
+                    transaction.Message.CorrelationId,
+                    transaction.DeliveryCount))
                 {
                     // process message within a logical transaction that can be used for processing idempotency
+                    this.logger.Debug("Starting to process message [{0}] [id:{1}] [correlationId:{2}]",
+                        transaction.Message.Name,
+                        transaction.Message.Id,
+                        transaction.Message.CorrelationId);
+
                     await this.messageDispatcher.ProcessMessage(transaction.Message);
                 }
 
@@ -165,9 +173,10 @@ namespace NDomain.Bus
             catch (Exception ex)
             {
                 this.logger.Error(ex,
-                                     "Failed to process message {0} with id {1}",
+                                     "Failed to process message [{0}] [id:{1}] [correlationId:{2}]",
                                      transaction.Message.Name,
-                                     transaction.Message.Id);
+                                     transaction.Message.Id,
+                                     transaction.Message.CorrelationId);
 
                 completion = () => transaction.Fail();
             }
@@ -180,9 +189,10 @@ namespace NDomain.Bus
             catch (Exception ex)
             {
                 this.logger.Error(ex,
-                                     "Failed to complete message {0} with id {1}",
+                                     "Failed to complete message [{0}] [id:{1}] [correlationId:{2}]",
                                      transaction.Message.Name,
-                                     transaction.Message.Id);
+                                     transaction.Message.Id,
+                                     transaction.Message.CorrelationId);
             }
         }
 

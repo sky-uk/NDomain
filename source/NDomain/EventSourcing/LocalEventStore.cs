@@ -102,6 +102,10 @@ namespace NDomain.EventSourcing
             return Task.FromResult(true);
         }
 
+        public Task Append<T>(string eventStreamId, string transactionId, int expectedVersion, IEnumerable<IAggregateEvent<JObject>> events)
+        {
+            return Append(eventStreamId, transactionId, expectedVersion, events);
+        }
 
         public Task Commit(string eventStreamId, string transactionId)
         {

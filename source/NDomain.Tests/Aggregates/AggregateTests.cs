@@ -41,11 +41,11 @@ namespace NDomain.Tests.Aggregates
             var aggregateId = "some id";
             var events = new IAggregateEvent[] {
                 new AggregateEvent<CounterIncremented>(
-                    aggregateId, 1, DateTime.UtcNow, new CounterIncremented { Increment = 1 }),
+                    aggregateId, aggregateId, 1, DateTime.UtcNow, new CounterIncremented { Increment = 1 }),
                 new AggregateEvent<CounterMultiplied>(
-                    aggregateId, 2, DateTime.UtcNow, new CounterMultiplied{ Factor = 2}),
+                    aggregateId, aggregateId, 2, DateTime.UtcNow, new CounterMultiplied{ Factor = 2}),
                 new AggregateEvent<CounterIncremented>(
-                    aggregateId, 3, DateTime.UtcNow, new CounterIncremented { Increment = 5 }),
+                    aggregateId, aggregateId, 3, DateTime.UtcNow, new CounterIncremented { Increment = 5 }),
             };
 
             // act
@@ -72,7 +72,7 @@ namespace NDomain.Tests.Aggregates
             for (var i = 0; i < 10; ++i)
             {
                 state.Mutate(new AggregateEvent<CounterIncremented>(
-                                    aggregateId, i, DateTime.UtcNow, new CounterIncremented()));
+                                    aggregateId, aggregateId, i, DateTime.UtcNow, new CounterIncremented()));
             }
 
             // act
@@ -96,8 +96,8 @@ namespace NDomain.Tests.Aggregates
             var factory = AggregateFactory.For<Counter>();
             var aggregateId = "some id";
             var events = new IAggregateEvent[] {
-                new AggregateEvent<CounterIncremented>(aggregateId, 1, DateTime.UtcNow, new CounterIncremented { Increment = 1 }),
-                new AggregateEvent<EventThatNoAggregateKnows>(aggregateId, 2, DateTime.UtcNow, new EventThatNoAggregateKnows()),
+                new AggregateEvent<CounterIncremented>(aggregateId, aggregateId, 1, DateTime.UtcNow, new CounterIncremented { Increment = 1 }),
+                new AggregateEvent<EventThatNoAggregateKnows>(aggregateId, aggregateId, 2, DateTime.UtcNow, new EventThatNoAggregateKnows()),
             };
 
             // act and assert
@@ -120,8 +120,8 @@ namespace NDomain.Tests.Aggregates
             var factory = AggregateFactory.For<Counter>();
             var aggregateId = "some id";
             var events = new IAggregateEvent[] {
-                new AggregateEvent<CounterIncremented>(aggregateId, 1, DateTime.UtcNow, new CounterIncremented { Increment = 1 }),
-                new AggregateEvent<CounterMultiplied>(aggregateId, 2, DateTime.UtcNow, new CounterMultiplied{ Factor = 2}),
+                new AggregateEvent<CounterIncremented>(aggregateId, aggregateId, 1, DateTime.UtcNow, new CounterIncremented { Increment = 1 }),
+                new AggregateEvent<CounterMultiplied>(aggregateId, aggregateId, 2, DateTime.UtcNow, new CounterMultiplied{ Factor = 2}),
             };
             var counter = factory.CreateFromEvents(aggregateId, events);
 

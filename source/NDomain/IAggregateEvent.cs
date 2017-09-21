@@ -19,6 +19,11 @@ namespace NDomain
         string AggregateId { get; }
 
         /// <summary>
+        /// Name of the aggregate, usually the name of the Type of the aggregate that generated the event
+        /// </summary>
+        string AggregateName { get; }
+
+        /// <summary>
         /// Uniquely identifies an event in the event stream.
         /// </summary>
         /// <remarks>This is also used to determine the version of the aggregate, which is the last sequenceId in the event stream</remarks>

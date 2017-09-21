@@ -1,19 +1,24 @@
-﻿using System;
+﻿using Dapper;
+using NDomain.EventSourcing;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
-using NDomain.EventSourcing;
-using Newtonsoft.Json.Linq;
-using Dapper;
 
 namespace NDomain.Sql.EventSourcing
 {
-    public class SqlEventStoreDb : IEventStoreDb
+    public class SqlEventStoreDb : IEventStoreDb, IAggregateListRepository
     {
         private readonly string _connectionString;
         private readonly SqlObjectNames _sqlNames;
+
+        public SqlEventStoreDb(string connectionString)
+            : this(connectionString, new SqlObjectNames("cat", "Aggregates", "Events"))
+        {
+        }
 
         public SqlEventStoreDb(string connectionString, SqlObjectNames sqlNames)
         {
@@ -49,7 +54,7 @@ namespace NDomain.Sql.EventSourcing
                 return;
             }
 
-            string aggregateName = "undefined"; // TODO: find a way to pass the aggregate name here
+            string aggregateName = events.First().AggregateName ?? "undefined";
             await Append(eventStreamId, transactionId, expectedVersion, events, aggregateName).ConfigureAwait(false);
         }
 
@@ -64,7 +69,14 @@ namespace NDomain.Sql.EventSourcing
             // may want to re-implement this to do it with only one round trip 
             int newVersion = expectedVersion + events.Count();
 
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            var options = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted
+            };
+            using (var transaction = new TransactionScope(
+                TransactionScopeOption.Required,
+                options,
+                TransactionScopeAsyncFlowOption.Enabled))
             {
                 //TODO: Change to await inside catch (unavailable as long as we don't have any vs2015 build agents - we cannot leverage C#6 in TeamCity)
                 var sqlExceptionThrown = false;
@@ -87,7 +99,7 @@ namespace NDomain.Sql.EventSourcing
                     }
                 }
                 catch (SqlException e)
-                {                    
+                {
                     if (e.Number == SqlErrors.DuplicateKeyError || e.Number == SqlErrors.UniqueConstraintError)
                     {
                         sqlExceptionThrown = true;
@@ -104,7 +116,7 @@ namespace NDomain.Sql.EventSourcing
                     throw new ConcurrencyException(eventStreamId, expectedVersion, curVersion);
                 }
             }
-            
+
         }
 
         private async Task SQLCreateAggregateEntry(SqlConnection con, string eventStreamId, string aggregateType, int aggregateEventSeq, int snapshotEventSeq)
@@ -122,7 +134,7 @@ namespace NDomain.Sql.EventSourcing
             var sqlEvents = events.Select(e => new
             {
                 aggregateId = eventStreamId,
-                aggregateType = "undefined", // TODO: find a way to pass the aggregate name here
+                aggregateType = e.AggregateName,
                 eventSeq = e.SequenceId,
                 timestamp = e.DateUtc,
                 msgType = e.Name,
@@ -147,10 +159,12 @@ namespace NDomain.Sql.EventSourcing
                 _sqlNames.SchemaName,
                 _sqlNames.AggregateTableName);
 
-            var args = new {
+            var args = new
+            {
                 aggregateId = eventStreamId,
                 expectedVersion = expectedVersion,
-                newVersion = newVersion };
+                newVersion = newVersion
+            };
 
             int affectedRows = await con.ExecuteAsync(statement, args).ConfigureAwait(false);
 
@@ -192,12 +206,19 @@ namespace NDomain.Sql.EventSourcing
                 {
                     con.Dispose();
                 }
-            }               
+            }
         }
 
         public async Task Commit(string eventStreamId, string transactionId)
         {
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            var options = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted
+            };
+            using (var transaction = new TransactionScope(
+                TransactionScopeOption.Required,
+                options,
+                TransactionScopeAsyncFlowOption.Enabled))
             {
                 using (var con = new SqlConnection(_connectionString))
                 {
@@ -208,7 +229,7 @@ namespace NDomain.Sql.EventSourcing
                         _sqlNames.SchemaName,
                         _sqlNames.EventTableName);
 
-                    await con.ExecuteAsync(cmd, new { aggregateId = eventStreamId, transactionId }).ConfigureAwait(false);
+                    await con.ExecuteAsync(cmd, new {aggregateId = eventStreamId, transactionId}).ConfigureAwait(false);
                     transaction.Complete();
                 }
             }
@@ -259,10 +280,42 @@ namespace NDomain.Sql.EventSourcing
             return res.Select(e => ToAggregateEvent(e)).ToList();
         }
 
+        public Task<IEnumerable<string>> GetAggregates<TAggregate>() where TAggregate : IAggregate
+        {
+            return GetAggregates(typeof(TAggregate));
+        }
+
+        public Task<IEnumerable<string>> GetAggregates(Type aggregateType)
+        {
+            return GetAggregates(aggregateType.Name);
+        }
+
+        public async Task<IEnumerable<string>> GetAggregates(string aggregateKey)
+        {
+            var query = string.Format(
+                SqlStatements.GetAggregateIdsByType,
+                _sqlNames.SchemaName,
+                _sqlNames.AggregateTableName);
+
+            IEnumerable<string> identifiers = null;
+
+            using (var con = new SqlConnection(_connectionString))
+            {
+                await con.OpenAsync().ConfigureAwait(false);
+
+                identifiers = await con
+                    .QueryAsync<string>(query, new { aggregate_type = aggregateKey })
+                    .ConfigureAwait(false);
+            }
+
+            return identifiers ?? Enumerable.Empty<string>();
+        }
+
         private IAggregateEvent<JObject> ToAggregateEvent(EventEntity entity)
         {
             return new AggregateEvent<JObject>(
                 entity.aggregate_id,
+                entity.aggregate_type,
                 entity.event_seq,
                 entity.timestamp,
                 entity.msg_type,
@@ -270,7 +323,8 @@ namespace NDomain.Sql.EventSourcing
         }
 
         private static class SqlStatements
-        {            
+        {
+            //internal const string GetEventsByType = "select eventtype, data from {0} where eventtype in ('{1}')";
             internal const string InsertAggregate = "insert into {0}.{1} values (@eventStreamId, @aggregateType, @aggregateEventSeq, @snapshotEventSeq)";
             internal const string InsertEvents =
             #region insert events statement
@@ -290,7 +344,7 @@ namespace NDomain.Sql.EventSourcing
             internal const string GetUncommittedEventsQuery = "select * from {0}.{1} where aggregate_id = @aggregateId and transaction_id = @transactionId and committed = 0 order by event_seq";
             internal const string ReadAggregateVersion = "select [aggregate_event_seq] from {0}.{1} where [aggregate_id] = @aggregateId";
             internal const string UpdateAggregateVersion = @"update {0}.{1} set [aggregate_event_seq] = @newVersion where [aggregate_id] = @aggregateId and [aggregate_event_seq] = @expectedVersion";
-            internal const string CommitEvents = "update {0}.{1} set committed = 1 where aggregate_Id = @aggregateId and transaction_id = @transactionId";           
+            internal const string CommitEvents = "update {0}.{1} set committed = 1 where aggregate_Id = @aggregateId and transaction_id = @transactionId";
             internal const string TablesInitialization =
             #region table initialization statement
                 @"
@@ -336,7 +390,8 @@ namespace NDomain.Sql.EventSourcing
                             on {0}.{2}([transaction_id] asc)
                     end
                 ";
-            #endregion            
+            #endregion
+            internal const string GetAggregateIdsByType = "select [aggregate_id] from {0}.{1} where [aggregate_type] = @aggregate_type";
         }
     }
 

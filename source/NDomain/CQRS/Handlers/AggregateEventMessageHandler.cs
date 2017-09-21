@@ -27,6 +27,7 @@ namespace NDomain.CQRS.Handlers
         {
             return new AggregateEvent<T>(
                         message.Headers[CqrsMessageHeaders.AggregateId],
+                        message.Headers[CqrsMessageHeaders.AggregateName],
                         int.Parse(message.Headers[CqrsMessageHeaders.SequenceId]),
                         DateTime.FromBinary(long.Parse(message.Headers[CqrsMessageHeaders.DateUtc])),
                         message.Body.ToObject<T>());

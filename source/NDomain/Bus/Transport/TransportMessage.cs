@@ -23,6 +23,11 @@ namespace NDomain.Bus.Transport
         public string Id { get; set; }
 
         /// <summary>
+        /// Message Correlation Id
+        /// </summary>
+        public string CorrelationId { get; set; }
+
+        /// <summary>
         /// Name of the message. Usually it's the actual Type of the payload object.
         /// </summary>
         public string Name { get; set; }

@@ -1,12 +1,6 @@
 ﻿using NDomain.Configuration;
-using NDomain.NLog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace NDomain.Configuration
+namespace NDomain.NLog
 {
     /// <summary>
     /// Logging configurator that uses NLog

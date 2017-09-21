@@ -14,7 +14,7 @@ namespace NDomain.Helpers
     /// Helper class where most of the magic is done, which is the core of the simplicity of the NDomain framework.
     /// Contains helpers that generate runtime delegates using reflection and expression trees. These delegates should be cached by the caller since their execution is much faster than reflection invocations or expression trees compilation.
     /// </summary>
-    internal static class ReflectionUtils
+    public static class ReflectionUtils
     {
         public static Func<string, TState, TAggregate> BuildCreateAggregateFromStateFunc<TAggregate, TState>()
             where TAggregate : IAggregate
@@ -42,7 +42,7 @@ namespace NDomain.Helpers
             var stateType = aggregateType.BaseType.GetGenericArguments()[0];
 
             var eventTypes = stateType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                                      .Where(m => m.Name.Length > 2 && m.Name.StartsWith("On") && m.GetParameters().Length == 1 && m.ReturnType == typeof(void))
+                                      .Where(m => m.Name.StartsWith("On") && m.GetParameters().Length == 1 && m.ReturnType == typeof(void))
                                       .Select(m => m.GetParameters()[0].ParameterType)
                                       .ToArray();
 
@@ -55,7 +55,7 @@ namespace NDomain.Helpers
             var stateType = typeof(TState);
 
             var mutateMethods = stateType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                                         .Where(m => m.Name.Length >= 2 && m.Name.StartsWith("On") && m.GetParameters().Length == 1 && m.ReturnType == typeof(void))
+                                         .Where(m => m.Name.StartsWith("On") && m.GetParameters().Length == 1 && m.ReturnType == typeof(void))
                                          .ToArray();
 
             var stateEventMutators = from method in mutateMethods
@@ -132,13 +132,13 @@ namespace NDomain.Helpers
             return handlers;
         }
 
-        public static Dictionary<string, Action<T, IAggregateEvent>> FindQueryEventHandlerMethods<T>(object instance)
+        public static Dictionary<string, Func<T, IAggregateEvent, T>> FindQueryEventHandlerMethods<T>(object instance)
         {
             var methods = instance.GetType()
                                   .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                                   .Where(m => m.Name == "On"
                                            && m.GetParameters().Length == 2 && m.GetParameters()[0].ParameterType == typeof(T)
-                                           && m.ReturnType == typeof(void))
+                                           && m.ReturnType == typeof(T))
                                   .ToArray();
 
             // TODO: EventName is hardcoded as Type.Name
@@ -146,7 +146,7 @@ namespace NDomain.Helpers
             return handlers;
         }
 
-        private static Action<T, IAggregateEvent> BuildQueryEventHandler<T>(object instance, MethodInfo method)
+        private static Func<T, IAggregateEvent, T> BuildQueryEventHandler<T>(object instance, MethodInfo method)
         {
             var eventType = method.GetParameters()[1].ParameterType;
 
@@ -160,7 +160,7 @@ namespace NDomain.Helpers
                                     queryParam,
                                     Expression.Convert(Expression.Property(eventParam, "Payload"), eventType));
 
-            var lambda = Expression.Lambda<Action<T, IAggregateEvent>>(methodCallExpr, queryParam, eventParam);
+            var lambda = Expression.Lambda<Func<T, IAggregateEvent, T>>(methodCallExpr, queryParam, eventParam);
             return lambda.Compile();
         }
 

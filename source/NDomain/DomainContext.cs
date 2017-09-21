@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NDomain.Bus;
 using NDomain.CQRS;
+using NDomain.EventSourcing;
 
 namespace NDomain
 {
@@ -18,6 +19,7 @@ namespace NDomain
     /// </summary>
     public class DomainContext : IDomainContext
     {
+        readonly IEventStoreDb eventStoreDb;
         readonly IEventStore eventStore;
         readonly IEventBus eventBus;
         readonly ICommandBus commandBus;
@@ -26,13 +28,15 @@ namespace NDomain
         readonly IDependencyResolver resolver;
 
 
-        public DomainContext(IEventStore eventStore,
+        public DomainContext(IEventStoreDb eventStoreDb,
+                             IEventStore eventStore,
                              IEventBus eventBus,
                              ICommandBus commandBus,
                              IEnumerable<IProcessor> processors,
                              ILoggerFactory loggerFactory,
                              IDependencyResolver resolver)
         {
+            this.eventStoreDb = eventStoreDb;
             this.eventStore = eventStore;
             this.eventBus = eventBus;
             this.commandBus = commandBus;
@@ -41,6 +45,7 @@ namespace NDomain
             this.resolver = resolver;
         }
 
+        public IEventStoreDb EventStoreDb { get { return this.eventStoreDb; } }
         public IEventStore EventStore { get { return this.eventStore; } }
         public IEventBus EventBus { get { return this.eventBus; } }
         public ICommandBus CommandBus { get { return this.commandBus; } }

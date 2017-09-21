@@ -17,6 +17,11 @@ namespace NDomain.Bus
         public const string Id = "ndomain.id";
 
         /// <summary>
+        /// The message correlation id
+        /// </summary>
+        public const string CorrelationId = "ndomain.correlation_id";
+
+        /// <summary>
         /// Identifies the endpoint of the destination of the message. 
         /// In queue based endpoints, it will be the name of the queue.
         /// </summary>

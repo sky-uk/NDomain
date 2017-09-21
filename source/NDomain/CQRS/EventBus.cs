@@ -58,10 +58,16 @@ namespace NDomain.CQRS
 
         private Message BuildMessage(IAggregateEvent ev)
         {
+            var transactionId = DomainTransaction.Current?.Id ?? Guid.NewGuid().ToString();
+            var correlationId = DomainTransaction.Current?.CorrelationId ?? Guid.NewGuid().ToString();
+
             var headers = new Dictionary<string, string>
             {
+                { MessageHeaders.CorrelationId, correlationId },
                 { CqrsMessageHeaders.DateUtc, ev.DateUtc.ToBinary().ToString() },
                 { CqrsMessageHeaders.AggregateId, ev.AggregateId },
+                { CqrsMessageHeaders.TransactionId, transactionId },                
+                { CqrsMessageHeaders.AggregateName, ev.AggregateName},
                 { CqrsMessageHeaders.SequenceId, ev.SequenceId.ToString() }
             };
 

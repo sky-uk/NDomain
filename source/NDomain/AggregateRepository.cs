@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NDomain.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,7 +38,7 @@ namespace NDomain
             if (!events.Any())
             {
                 // not found
-                throw new Exception("not found");
+                throw new AggregateNotFoundException(id);
             }
 
             var aggregate = Factory.CreateFromEvents(id, events.ToArray());

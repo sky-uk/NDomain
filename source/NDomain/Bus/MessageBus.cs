@@ -69,6 +69,7 @@ namespace NDomain.Bus
             var transportMessage = new TransportMessage();
             // reuse existing Id or create a new one
             transportMessage.Id = message.Headers.GetOrDefault(MessageHeaders.Id) ?? Guid.NewGuid().ToString();
+            transportMessage.CorrelationId = message.Headers.GetOrDefault(MessageHeaders.CorrelationId) ?? Guid.NewGuid().ToString();
             transportMessage.Name = message.Name;
             transportMessage.Body = jsonPayload;
 
@@ -87,23 +88,41 @@ namespace NDomain.Bus
             return transportMessage;
         }
 
-        private Task PublishMessages(IEnumerable<TransportMessage> messages)
+        private async Task PublishMessages(IEnumerable<TransportMessage> messages)
         {
             var count = messages.Count();
 
             if (count == 0)
             {
-                return Task.FromResult(0);
+                return;
             }
 
             if (count == 1)
             {
                 var message = messages.First();
-                return this.transport.Send(message);
+                await this.transport.Send(message);
+                LogMessages(messages);
             }
             else
             {
-                return this.transport.SendMultiple(messages);
+                await this.transport.SendMultiple(messages);
+                LogMessages(messages);
+            }
+        }
+
+        private void LogMessages(IEnumerable<TransportMessage> messages)
+        {
+            foreach (var message in messages)
+            {
+                var sb = new StringBuilder("Sent Message ");
+                sb.Append($"[messageName:{message.Name}] ");
+                
+                foreach (var header in message.Headers)
+                {
+                    sb.Append($"[{header.Key}:{header.Value}] ");
+                }
+                
+                logger.Info(sb.ToString());
             }
         }
     }

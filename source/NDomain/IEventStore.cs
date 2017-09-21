@@ -16,13 +16,22 @@ namespace NDomain
         Task<IEnumerable<IAggregateEvent>> Load(string aggregateId);
 
         /// <summary>
-        /// Loads events for a given aggregateId, from start to end sequenceIds, inclusive
+        /// Loads events for a given aggregateId, from start to end sequenceIds, inclusive. Checks for uncommitted events in the stream and tries to publish them again
         /// </summary>
         /// <param name="aggregateId"></param>
         /// <param name="start"></param>
         /// <param name="end"></param>
         /// <returns></returns>
         Task<IEnumerable<IAggregateEvent>> LoadRange(string aggregateId, int start, int end);
+
+        /// <summary>
+        /// Loads events for a given aggregateId, from start to end sequenceIds, inclusive
+        /// </summary>
+        /// <param name="aggregateId"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <returns></returns>
+        Task<IEnumerable<IAggregateEvent>> LoadRangeWithoutCheckingUncommitted(string aggregateId, int start, int end);
 
         /// <summary>
         /// Appends events to a given aggregateId, as long as its version matches the expectedVersion.
@@ -32,6 +41,7 @@ namespace NDomain
         /// <param name="expectedVersion"></param>
         /// <param name="events"></param>
         /// <returns></returns>
+        /// 
         Task Append(string aggregateId, int expectedVersion, IEnumerable<IAggregateEvent> events);
     }
 

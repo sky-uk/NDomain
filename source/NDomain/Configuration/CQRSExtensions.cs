@@ -1,14 +1,10 @@
-﻿using NDomain.Configuration;
-using NDomain.Bus;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NDomain.Bus;
 using NDomain.CQRS;
 using NDomain.CQRS.Handlers;
 using NDomain.Helpers;
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace NDomain.Configuration
 {
@@ -34,7 +30,7 @@ namespace NDomain.Configuration
             where THandler : class
         {
             processorConfigurator.Configuring += processor => RegisterCQRSHandler<THandler>(processor, instance);
-            
+
             // add this type to IoC known types, so that it can be resolved
             // not pretty, but it's a compromise..
             processorConfigurator.Builder
@@ -44,17 +40,43 @@ namespace NDomain.Configuration
             return processorConfigurator;
         }
 
+        public static ProcessorConfigurator RegisterConditionalHandler<THandler>(
+            this ProcessorConfigurator processorConfigurator,
+            Func<bool> predicate,
+            THandler instance = null)
+            where THandler : class
+        {
+            if (!predicate())
+            {
+                return processorConfigurator;
+            }
+
+            return processorConfigurator.RegisterHandler(instance);
+        }
+
         public static ProcessorConfigurator RegisterCommandHandler<TMessage>(this ProcessorConfigurator processorConfigurator,
                                                                              string handlerName,
                                                                              Func<ICommand<TMessage>, Task> handlerFunc)
         {
             processorConfigurator.Configuring += processor => SubscribeCommand<TMessage, object>(
-                                                                processor, 
-                                                                handlerName, 
-                                                                (_, msg) => handlerFunc(msg), 
+                                                                processor,
+                                                                handlerName,
+                                                                (_, msg) => handlerFunc(msg),
                                                                 new object()); //dummy instance
 
             return processorConfigurator;
+        }
+
+        public static ProcessorConfigurator RegisterConditionalCommandHandler<TMessage>(this ProcessorConfigurator processorConfigurator,
+            string handlerName,
+            Func<bool> predicate,
+            Func<ICommand<TMessage>, Task> handlerFunc)
+        {
+            if (!predicate())
+            {
+                return processorConfigurator;
+            }
+            return processorConfigurator.RegisterCommandHandler(handlerName, handlerFunc);
         }
 
         public static ProcessorConfigurator RegisterEventHandler<TMessage>(this ProcessorConfigurator processorConfigurator,
@@ -70,6 +92,18 @@ namespace NDomain.Configuration
             return processorConfigurator;
         }
 
+        public static ProcessorConfigurator RegisterConditionalEventHandler<TMessage>(this ProcessorConfigurator processorConfigurator,
+            string handlerName,
+            Func<bool> predicate,
+            Func<IEvent<TMessage>, Task> handlerFunc)
+        {
+            if (!predicate())
+            {
+                return processorConfigurator;
+            }
+            return processorConfigurator.RegisterEventHandler(handlerName, handlerFunc);
+        }
+
         public static ProcessorConfigurator RegisterAggregateEventHandler<TMessage>(this ProcessorConfigurator processorConfigurator,
                                                                                     string handlerName,
                                                                                      Func<IAggregateEvent<TMessage>, Task> handlerFunc)
@@ -81,6 +115,17 @@ namespace NDomain.Configuration
                                                                 new object()); //dummy instance
 
             return processorConfigurator;
+        }
+        public static ProcessorConfigurator RegisterConditionalAggregateEventHandler<TMessage>(this ProcessorConfigurator processorConfigurator,
+            string handlerName,
+            Func<bool> predicate,
+            Func<IAggregateEvent<TMessage>, Task> handlerFunc)
+        {
+            if (!predicate())
+            {
+                return processorConfigurator;
+            }
+            return processorConfigurator.RegisterAggregateEventHandler(handlerName, handlerFunc);
         }
 
         private static void RegisterCQRSHandler<THandler>(Processor processor, THandler instance = null)

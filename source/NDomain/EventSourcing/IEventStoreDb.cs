@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NDomain.EventSourcing
@@ -42,7 +39,7 @@ namespace NDomain.EventSourcing
         /// <param name="transactionId"></param>
         /// <param name="expectedVersion"></param>
         /// <param name="events"></param>
-        /// <returns></returns>
+        /// <returns></returns>        
         Task Append(string eventStreamId, string transactionId, int expectedVersion, IEnumerable<IAggregateEvent<JObject>> events);
 
         /// <summary>

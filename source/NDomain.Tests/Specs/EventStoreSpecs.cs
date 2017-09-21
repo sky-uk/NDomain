@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NDomain.EventSourcing;
+using NDomain.Logging;
 
 namespace NDomain.Tests.Specs
 {
@@ -15,6 +16,7 @@ namespace NDomain.Tests.Specs
     {
         readonly IEventStoreSerializer serializer;
         readonly IEventStoreBus bus;
+        readonly ILoggerFactory loggerFactory;
 
         protected IEventStore eventStore;
         protected IEventStoreDb eventStorage;
@@ -23,6 +25,11 @@ namespace NDomain.Tests.Specs
         {
             this.serializer = new EventStoreSerializer(new[] { typeof(Event1), typeof(Event2) });
             this.bus = new Mock<IEventStoreBus>().Object;
+
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+            loggerFactoryMock.Setup(x => x.GetLogger(It.IsAny<Type>()))
+                .Returns(new Mock<ILogger>().Object);
+            this.loggerFactory = loggerFactoryMock.Object;
         }
 
         protected abstract IEventStoreDb CreateEventStorage();
@@ -34,7 +41,9 @@ namespace NDomain.Tests.Specs
         public void Setup()
         {
             this.eventStorage = CreateEventStorage();
-            this.eventStore = new EventStore(this.eventStorage, this.bus, this.serializer);
+            this.eventStore = new EventStore(this.eventStorage, this.bus, this.serializer, this.loggerFactory);
+
+
 
             this.OnSetUp();
         }
@@ -55,8 +64,8 @@ namespace NDomain.Tests.Specs
             var guid = Guid.NewGuid();
 
             await this.eventStore.Append(aggregateId, 0, new IAggregateEvent[] { 
-                new AggregateEvent<Event1>(aggregateId, 1, date, new Event1 { Value = "vv" }),  
-                new AggregateEvent<Event2>(aggregateId, 2, date, new Event2 { AnotherValue = guid })
+                new AggregateEvent<Event1>(aggregateId, aggregateId, 1, date, new Event1 { Value = "vv" }),  
+                new AggregateEvent<Event2>(aggregateId, aggregateId, 2, date, new Event2 { AnotherValue = guid })
             });
 
             var events = await this.eventStore.Load(aggregateId);
@@ -87,14 +96,14 @@ namespace NDomain.Tests.Specs
             Assert.IsEmpty(events);
 
             await this.eventStore.Append(aggregateId, 0, new IAggregateEvent[] { 
-                new AggregateEvent<Event1>(aggregateId, 1, DateTime.UtcNow, new Event1 { Value = "vv" }),  
-                new AggregateEvent<Event2>(aggregateId, 2, DateTime.UtcNow, new Event2 { AnotherValue = Guid.NewGuid() })
+                new AggregateEvent<Event1>(aggregateId, aggregateId, 1, DateTime.UtcNow, new Event1 { Value = "vv" }),  
+                new AggregateEvent<Event2>(aggregateId, aggregateId, 2, DateTime.UtcNow, new Event2 { AnotherValue = Guid.NewGuid() })
             });
 
             events = await this.eventStore.Load(aggregateId);
             Assert.AreEqual(2, events.Count());
 
-            await this.eventStore.Append(aggregateId, 2, new IAggregateEvent[] { new AggregateEvent<Event1>(aggregateId, 3, DateTime.UtcNow, new Event1 { Value = "vvvv" }) });
+            await this.eventStore.Append(aggregateId, 2, new IAggregateEvent[] { new AggregateEvent<Event1>(aggregateId, aggregateId, 3, DateTime.UtcNow, new Event1 { Value = "vvvv" }) });
 
             events = await this.eventStore.LoadRange(aggregateId, 2, 3);
             Assert.AreEqual(2, events.Count());
@@ -105,12 +114,12 @@ namespace NDomain.Tests.Specs
             Assert.AreEqual(1, events.Count());
             Assert.AreEqual(3, events.Single().SequenceId);
 
-            await this.eventStore.Append(aggregateId, 3, new IAggregateEvent[] { new AggregateEvent<Event1>(aggregateId, 4, DateTime.UtcNow, new Event1 { Value = "vvvv" }) });
+            await this.eventStore.Append(aggregateId, 3, new IAggregateEvent[] { new AggregateEvent<Event1>(aggregateId, aggregateId, 4, DateTime.UtcNow, new Event1 { Value = "vvvv" }) });
 
             // simulate conflict
             try
             {
-                await this.eventStore.Append(aggregateId, 2, new IAggregateEvent[] { new AggregateEvent<Event2>(aggregateId, 3, DateTime.UtcNow, new Event2 { AnotherValue = Guid.NewGuid() }) });
+                await this.eventStore.Append(aggregateId, 2, new IAggregateEvent[] { new AggregateEvent<Event2>(aggregateId, aggregateId, 3, DateTime.UtcNow, new Event2 { AnotherValue = Guid.NewGuid() }) });
                 Assert.Fail("Should have thrown ConcurrencyException");
             }
             catch (ConcurrencyException ex)
@@ -126,8 +135,8 @@ namespace NDomain.Tests.Specs
             var tr1 = Guid.NewGuid().ToString();
 
             await this.eventStorage.Append(eventStreamId, tr1, 0, new IAggregateEvent<JObject>[] { 
-                new AggregateEvent<JObject>(eventStreamId, 1, DateTime.UtcNow, JObject.FromObject(new Event1 { Value = "vv" })),  
-                new AggregateEvent<JObject>(eventStreamId, 2, DateTime.UtcNow, JObject.FromObject(new Event2 { AnotherValue = Guid.NewGuid() }))
+                new AggregateEvent<JObject>(eventStreamId, eventStreamId, 1, DateTime.UtcNow, JObject.FromObject(new Event1 { Value = "vv" })),  
+                new AggregateEvent<JObject>(eventStreamId, eventStreamId, 2, DateTime.UtcNow, JObject.FromObject(new Event2 { AnotherValue = Guid.NewGuid() }))
             });
 
             var uncommittedLog = await this.eventStorage.LoadUncommitted(eventStreamId, tr1);
@@ -136,9 +145,9 @@ namespace NDomain.Tests.Specs
             var tr2 = Guid.NewGuid().ToString();
 
             await this.eventStorage.Append(eventStreamId, tr2, 2, new IAggregateEvent<JObject>[] { 
-                new AggregateEvent<JObject>(eventStreamId, 3, DateTime.UtcNow, JObject.FromObject(new Event1 { Value = "vv" })),  
-                new AggregateEvent<JObject>(eventStreamId, 4, DateTime.UtcNow, JObject.FromObject(new Event2 { AnotherValue = Guid.NewGuid() })),
-                new AggregateEvent<JObject>(eventStreamId, 5, DateTime.UtcNow, JObject.FromObject(new Event2 { AnotherValue = Guid.NewGuid() }))
+                new AggregateEvent<JObject>(eventStreamId, eventStreamId, 3, DateTime.UtcNow, JObject.FromObject(new Event1 { Value = "vv" })),  
+                new AggregateEvent<JObject>(eventStreamId, eventStreamId, 4, DateTime.UtcNow, JObject.FromObject(new Event2 { AnotherValue = Guid.NewGuid() })),
+                new AggregateEvent<JObject>(eventStreamId, eventStreamId, 5, DateTime.UtcNow, JObject.FromObject(new Event2 { AnotherValue = Guid.NewGuid() }))
             });
 
             uncommittedLog = await this.eventStorage.LoadUncommitted(eventStreamId, tr2);

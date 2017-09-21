@@ -1,5 +1,7 @@
 ﻿using Moq;
 using NDomain.EventSourcing;
+using NDomain.Exceptions;
+using NDomain.Logging;
 using NDomain.Tests.Sample;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
@@ -57,7 +59,7 @@ namespace NDomain.Tests.Aggregates
             var aggregateId = Guid.NewGuid().ToString();
 
             // ensure its not there
-            Assert.Throws<Exception>(async () => await repository.Find(aggregateId));
+            Assert.ThrowsAsync<AggregateNotFoundException>(async () => await repository.Find(aggregateId));
 
             var aggregate = factory.CreateNew(aggregateId);
             aggregate.Increment();
@@ -74,6 +76,10 @@ namespace NDomain.Tests.Aggregates
         private IAggregateRepository<Counter> CreateRaceRepository()
         {
             var bus = new Mock<IEventStoreBus>();
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+            loggerFactoryMock.Setup(x => x.GetLogger(It.IsAny<Type>()))
+                .Returns(new Mock<ILogger>().Object);
+            var loggerFactory = loggerFactoryMock.Object;
 
             bus.Setup(b => b.Publish(It.IsAny<IAggregateEvent<JObject>>()))
                 .Returns(Task.FromResult(true));
@@ -83,7 +89,8 @@ namespace NDomain.Tests.Aggregates
             var eventStore = new EventStore(
                                 new LocalEventStore(),
                                 bus.Object,
-                                EventStoreSerializer.FromAggregateTypes(typeof(Counter)));
+                                EventStoreSerializer.FromAggregateTypes(typeof(Counter)),
+                                loggerFactory);
 
             var repository = new AggregateRepository<Counter>(eventStore);
             return repository;
