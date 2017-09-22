@@ -1,4 +1,5 @@
 mode: ContinuousDeployment
-branches: {}
+tag-prefix: '[Rr]eleases?[/-]'
+branches:{}
 ignore:
   sha: []
