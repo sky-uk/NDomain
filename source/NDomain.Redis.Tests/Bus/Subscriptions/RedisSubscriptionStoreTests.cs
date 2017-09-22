@@ -12,12 +12,13 @@ using System.Threading.Tasks;
 namespace NDomain.Redis.Tests.Bus.Subscriptions
 {
     [TestFixture(Category = "Redis")]
+    [Ignore("No Redis support in CI for the time being.")]
     public class RedisSubscriptionStoreTests : SubscriptionStoreSpecs
     {
         ConnectionMultiplexer connection;
 
-        [TestFixtureSetUp]
-        public void SetUpFixture()
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
             var options = new ConfigurationOptions();
             options.AllowAdmin = true;

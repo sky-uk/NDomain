@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 
 namespace NDomain.Azure.Tests
 {
-    [SetUpFixture]
+    [TestFixture]
+    [Ignore("No Azure support in CI for the time being.")]
     public class StartStopAzureEmulator
     {
         private bool _wasUp;

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 namespace NDomain.Azure.Tests.Bus.Transport.Queues
 {
     [TestFixture]
+    [Ignore("No Azure support in CI for the time being.")]
     public class AzureTransportTests : TransportSpecs
     {
         public override ITransportFactory CreateFactory()

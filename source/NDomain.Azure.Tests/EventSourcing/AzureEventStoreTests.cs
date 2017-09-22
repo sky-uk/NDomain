@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 namespace NDomain.Azure.Tests.EventSourcing
 {
     [TestFixture]
+    [Ignore("No Azure support in CI for the time being.")]
     public class AzureEventStoreTests : EventStoreSpecs
     {
         protected override IEventStoreDb CreateEventStorage()

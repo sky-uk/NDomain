@@ -13,14 +13,15 @@ using System.Threading.Tasks;
 namespace NDomain.Redis.Tests.Bus.Transport
 {
     [TestFixture(Category = "Redis")]
+    [Ignore("No Redis support in CI for the time being.")]
     public class RedisTransportTests : TransportSpecs
     {
         static readonly string serverEndpoint = "localhost:6379";
 
         ConnectionMultiplexer connection;
 
-        [TestFixtureSetUp]
-        public void SetUpFixture()
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
             var options = new ConfigurationOptions();
             options.AllowAdmin = true;
