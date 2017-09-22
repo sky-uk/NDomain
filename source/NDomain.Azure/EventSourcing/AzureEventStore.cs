@@ -116,7 +116,7 @@ namespace NDomain.EventSourcing.Azure
             // no need to validate expected version, because the batch transaction will fail if a duplicate exists
             var transaction = new TableBatchOperation();
 
-            transaction.InsertOrReplace(CreateSourceRoot(eventStreamId, expectedVersion + events.Count()));
+            transaction.InsertOrReplace(CreateSourceRoot(eventStreamId, events.First().AggregateName, expectedVersion + events.Count()));
 
             foreach (var ev in events)
             {
@@ -155,10 +155,11 @@ namespace NDomain.EventSourcing.Azure
             await table.ExecuteAsync(deleteOperation);
         }
 
-        private DynamicTableEntity CreateSourceRoot(string sourceId, int version)
+        private DynamicTableEntity CreateSourceRoot(string sourceId, string aggregateName, int version)
         {
             var sourceRootEntity = new DynamicTableEntity(sourceId, SourceRootRowKey);
             sourceRootEntity.Properties["Version"] = new EntityProperty(version);
+            sourceRootEntity.Properties["AggregateName"] = new EntityProperty(aggregateName);
             return sourceRootEntity;
         }
 

@@ -51,6 +51,7 @@ namespace NDomain.EventSourcing.Azure
         {
             return new AggregateEvent<JObject>(
                         entity.PartitionKey,
+                        entity.Properties["AggregateName"].StringValue,
                         int.Parse(entity.RowKey),
                         entity.Properties["DateUtc"].DateTime.Value,
                         entity.Properties["Name"].StringValue,

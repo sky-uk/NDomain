@@ -92,7 +92,7 @@ namespace NDomain.CQRS.Projections.Azure
             return query;
         }
 
-        public async Task Set(string id, Query<T> query)
+        public async Task Set(string id, Query<T> query, int expectedVersion)
         {
             var container = this.client.GetContainerReference(this.containerName);
             await EnsureContainerExists(container);
