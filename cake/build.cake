@@ -1,4 +1,5 @@
-#tool "nuget:?package=GitVersion.CommandLine"
+#tool "nuget:?package=GitVersion.CommandLine";
+#tool "nuget:?package=NUnit.ConsoleRunner";
 
 private Verbosity ParseVerbosity(string verbosity)
 {
