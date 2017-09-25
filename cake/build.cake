@@ -1,5 +1,21 @@
 #tool "nuget:?package=GitVersion.CommandLine";
 #tool "nuget:?package=NUnit.ConsoleRunner";
+#addin "nuget:?package=Cake.XdtTransform";
+#addin "nuget:?package=Cake.SqlServer";
+#addin "nuget:?package=Cake.FileHelpers";
+
+public void PrintUsage()
+{
+	Console.WriteLine(string.Format("Usage: build.cake [options]{0}" +
+								"Options:{0}" +
+								"\t-target\t\t\t\tCake build entry point.\tDefaults to 'BuildOnCommit'.{0}" +
+								"\t-configuration\t\t\tBuild configuration [Debug|Release]. Defaults to 'Release'.{0}" +
+								"\t-verbosity\t\t\tVerbosity [Quiet|Minimal|Normal|Verbose|Diagnostic]. Defaults to 'Minimal'.{0}" +
+								"\t-nuget-repo\t\t\tThe Nuget repo to publish to. Mandatory for 'BuildOnCommit' target.{0}" +
+								"\t-event-store-connection-string\tThe SQL connection string to use when connecting to the event store when running tests. Defaults to local connection string{0}" +
+								"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{0}"
+								, Environment.NewLine));
+}
 
 private Verbosity ParseVerbosity(string verbosity)
 {
@@ -31,6 +47,7 @@ private NuGetVerbosity MapVerbosityToNuGetVerbosity(Verbosity verbosity)
 var target = Argument("target", "BuildOnCommit");
 var configuration = Argument("configuration", "Release");
 var verbosity = ParseVerbosity(Argument("verbosity", "Verbose"));
+var eventStoreConnectionString = Argument("event-store-connection-string", "Data Source=.\\SQL2012;Initial Catalog=NDomain;Integrated Security=SSPI");
 var solution = "../source/NDomain.sln";
 
 //////////////////////////////////////////////////////////////////////
@@ -39,6 +56,7 @@ var solution = "../source/NDomain.sln";
 var nugetOutputPath = "../nuget/.output";
 var nuspecPattern = "../**/NDomain*.nuspec";
 var runningOnBuildServer = TeamCity.IsRunningOnTeamCity;
+string eventStoreDatabase = null;
 string nugetVersion = null;
 GitVersion gitVersion = null;
 
@@ -78,8 +96,9 @@ Task("Build")
 							.WithTarget("Build"));
 	});
 
-Task("Run-Unit-Tests")
+Task("Run-Tests")
 	.IsDependentOn("Build")
+	.IsDependentOn("Set-Up-Test-Database")
 	.Does(() =>
 	{
 		NUnit3(string.Format("../**/bin/{0}/*.Tests.dll",configuration), new NUnit3Settings
@@ -89,9 +108,31 @@ Task("Run-Unit-Tests")
 		});
 	});
 
+Task("Set-Up-Test-Database")
+.Does(() =>
+{
+	eventStoreDatabase = Argument("event-store-db", "NDomain");
+	var connectionString = eventStoreConnectionString.Replace(string.Format("Initial Catalog={0}", eventStoreDatabase), string.Empty);
+
+	CreateDatabaseIfNotExists(connectionString, eventStoreDatabase);
+
+	ExecuteSqlFile(connectionString, "./SetUpTests.sql");
+});
+
+Task("Tear-Down-Test-Database")
+	.IsDependentOn("Set-Up-Test-Database")
+	.IsDependentOn("Run-Tests")
+	.Does(() =>
+	{
+		var connectionString = eventStoreConnectionString.Replace(string.Format("Initial Catalog={0}", eventStoreDatabase), string.Empty);
+
+		DropDatabase(connectionString, eventStoreDatabase);
+		ExecuteSqlFile(connectionString, "./TearDownTests.sql");
+	});
+
 Task("Pack-NuGet-Packages")
 	.WithCriteria(() => runningOnBuildServer)
-	.IsDependentOn("Run-Unit-Tests")
+	.IsDependentOn("Tear-Down-Test-Database")
 	.IsDependentOn("Get-GitVersion")
 	.Does(() =>
 	{
@@ -132,7 +173,7 @@ Task("Publish-NuGet-Packages")
 
 Task("Pack-Local-NuGet-Packages")
 	.WithCriteria(() => !runningOnBuildServer)
-	.IsDependentOn("Run-Unit-Tests")
+	.IsDependentOn("Tear-Down-Test-Database")
 	.IsDependentOn("Get-GitVersion")
 	.Does(() =>
 	{
@@ -227,16 +268,51 @@ Task("Set-Assembly-Information-Files")
 		}
 	});
 
+Task("Transform-Files")
+		.IsDependentOn("Build")
+		.WithCriteria(() => runningOnBuildServer)
+		.Does(() =>
+		{
+			var files = GetFiles("../**/TeamCityTransform.config");
+			foreach(var f in files)
+			{
+				var path = f.GetDirectory().FullPath;
+				var transformFileName = f.FullPath;
+				var sourceFileName = String.Format("{0}/bin/{1}/{2}.dll.config", path, configuration, f.GetDirectory().Segments.Last());
+
+				var sourceFile      = File(sourceFileName);
+				var transformFile   = File(transformFileName);
+				var targetFile      = File(sourceFileName);
+				XdtTransformConfig(sourceFile, transformFile, targetFile);
+
+				ReplaceTextInFiles(sourceFileName, "%%event-store-connection-string%%", eventStoreConnectionString);
+
+				Information(String.Format("Transformed {0}{1}", sourceFileName, Environment.NewLine));
+			}
+
+			Information(String.Format("Connection strings:{1}EventStore:{0}{1}", eventStoreConnectionString, Environment.NewLine));
+		});
+
 //////////////////////////////////////////////////////////////////////
 // TASK TARGETS
 //////////////////////////////////////////////////////////////////////
 
 Task("BuildOnCommit")
 	.IsDependentOn("Pack-Local-NuGet-Packages")
-	.IsDependentOn("Publish-NuGet-Packages");
+	.IsDependentOn("Publish-NuGet-Packages")
+	.OnError(exception =>
+	{
+		PrintUsage();
+	});
 
 //////////////////////////////////////////////////////////////////////
 // EXECUTION
 //////////////////////////////////////////////////////////////////////
-
-RunTarget(target);
+if (target=="Help")
+{
+	PrintUsage();
+}
+else
+{
+	RunTarget(target);
+}
