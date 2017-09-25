@@ -3,7 +3,7 @@ IF NOT EXISTS (SELECT loginname
 								FROM master.dbo.syslogins
 								WHERE name='ndomain' AND dbname='NDomain')
 BEGIN
-	CREATE LOGIN [ndomain] WITH PASSWORD=N'', DEFAULT_DATABASE=[NDomain], DEFAULT_LANGUAGE=[us_english], CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF
+	CREATE LOGIN [%_USER_NAME_%] WITH PASSWORD=N'%_USER_PASSWORD_%', DEFAULT_DATABASE=[NDomain], DEFAULT_LANGUAGE=[us_english], CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF
 END
 
 -- Create user associated with login
@@ -11,7 +11,7 @@ IF NOT EXISTS (SELECT name
 								FROM sys.database_principals
 								WHERE name = 'ndomain')
 BEGIN
-	CREATE USER [ndomain] FOR LOGIN [ndomain]
+	CREATE USER [%_USER_NAME_%] FOR LOGIN [%_USER_NAME_%]
 END
 
 -- Create Agggregates and Events tables

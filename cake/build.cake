@@ -13,7 +13,9 @@ public void PrintUsage()
 								"\t-verbosity\t\t\tVerbosity [Quiet|Minimal|Normal|Verbose|Diagnostic]. Defaults to 'Minimal'.{0}" +
 								"\t-nuget-repo\t\t\tThe Nuget repo to publish to. Mandatory for 'BuildOnCommit' target.{0}" +
 								"\t-event-store-connection-string\tThe SQL connection string to use when connecting to the event store when running tests. Defaults to local connection string{0}" +
-								"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{0}"
+								"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{0}" +
+								"\t-event-store-user\t\tThe SQL database user to be created and used by the event store tests. Defaults to 'ndomain'{0}"
+								"\t-event-store-password\t\tThe SQL database user password to be associated with the user. Defaults to 'ndomain'{0}"
 								, Environment.NewLine));
 }
 
@@ -47,6 +49,8 @@ private NuGetVerbosity MapVerbosityToNuGetVerbosity(Verbosity verbosity)
 var target = Argument("target", "BuildOnCommit");
 var configuration = Argument("configuration", "Release");
 var verbosity = ParseVerbosity(Argument("verbosity", "Verbose"));
+var eventStoreUser = Argument("event-store-user", "ndomain");
+var eventStorePassword = Argument("event-store-pass", "ndomain");
 var eventStoreConnectionString = Argument("event-store-connection-string", "Data Source=.\\SQL2012;Initial Catalog=NDomain;Integrated Security=SSPI");
 var solution = "../source/NDomain.sln";
 
@@ -115,7 +119,8 @@ Task("Set-Up-Test-Database")
 	var connectionString = eventStoreConnectionString.Replace(string.Format("Initial Catalog={0}", eventStoreDatabase), string.Empty);
 
 	CreateDatabaseIfNotExists(connectionString, eventStoreDatabase);
-
+	ReplaceTextInFiles("./SetUpTests.sql", "%_USER_NAME_%", eventStoreUser);
+	ReplaceTextInFiles("./SetUpTests.sql", "%_USER_PASSWORD_%", eventStorePassword);
 	ExecuteSqlFile(connectionString, "./SetUpTests.sql");
 });
 
@@ -127,6 +132,7 @@ Task("Tear-Down-Test-Database")
 		var connectionString = eventStoreConnectionString.Replace(string.Format("Initial Catalog={0}", eventStoreDatabase), string.Empty);
 
 		DropDatabase(connectionString, eventStoreDatabase);
+		ReplaceTextInFiles("./TearDownTests.sql", "%_USER_NAME_%", eventStoreUser);
 		ExecuteSqlFile(connectionString, "./TearDownTests.sql");
 	});
 
