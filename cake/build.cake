@@ -14,8 +14,9 @@ public void PrintUsage()
 								"\t-nuget-repo\t\t\tThe Nuget repo to publish to. Mandatory for 'BuildOnCommit' target.{0}" +
 								"\t-event-store-connection-string\tThe SQL connection string to use when connecting to the event store when running tests. Defaults to local connection string{0}" +
 								"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{0}" +
-								"\t-event-store-user\t\tThe SQL database user to be created and used by the event store tests. Defaults to 'ndomain'{0}"
-								"\t-event-store-password\t\tThe SQL database user password to be associated with the user. Defaults to 'ndomain'{0}"
+								"\t-event-store-user\t\tThe SQL database user to be created and used by the event store tests. Defaults to 'ndomain'{0}" +
+								"\t-event-store-password\t\tThe SQL database user password to be associated with the user. Defaults to 'ndomain'{0}" +
+								"\t-branch\t\tThe branch being built. Required{0}"
 								, Environment.NewLine));
 }
 
@@ -51,6 +52,7 @@ var configuration = Argument("configuration", "Release");
 var verbosity = ParseVerbosity(Argument("verbosity", "Verbose"));
 var eventStoreUser = Argument("event-store-user", "ndomain");
 var eventStorePassword = Argument("event-store-pass", "ndomain");
+var buildServerBranch = Argument<string>("branch");
 var eventStoreConnectionString = Argument("event-store-connection-string", "Data Source=.\\SQL2012;Initial Catalog=NDomain;Integrated Security=SSPI");
 var solution = "../source/NDomain.sln";
 
@@ -150,7 +152,8 @@ Task("Pack-NuGet-Packages")
 			{
 				{"Configuration", configuration}
 			},
-			Version = nugetVersion
+			Version = nugetVersion,
+
 		};
 
 		EnsureDirectoryExists(Directory(nugetOutputPath).Path);
