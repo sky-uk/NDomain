@@ -12,7 +12,7 @@ public void PrintUsage()
 								"\t-configuration\t\t\tBuild configuration [Debug|Release]. Defaults to 'Release'.{0}" +
 								"\t-verbosity\t\t\tVerbosity [Quiet|Minimal|Normal|Verbose|Diagnostic]. Defaults to 'Minimal'.{0}" +
 								"\t-nuget-repo\t\t\tThe Nuget repo to publish to. Mandatory for 'BuildOnCommit' target.{0}" +
-								"\t-event-store-connection-string\tThe SQL connection string to use when connecting to the event store when running tests. Defaults to local connection string{0}" +
+								"\t-ci-database-host\tThe CI DB connection string to use when setting up the database for tests to run. Defaults to local connection string{0}" +
 								"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{0}" +
 								"\t-event-store-user\t\tThe SQL database user to be created and used by the event store tests. Defaults to 'ndomain'{0}" +
 								"\t-event-store-password\t\tThe SQL database user password to be associated with the user. Defaults to 'ndomain'{0}" +
@@ -52,17 +52,18 @@ var configuration = Argument("configuration", "Release");
 var verbosity = ParseVerbosity(Argument("verbosity", "Verbose"));
 var eventStoreUser = Argument("event-store-user", "ndomain");
 var eventStorePassword = Argument("event-store-pass", "ndomain");
-var buildServerBranch = Argument<string>("branch");
-var eventStoreConnectionString = Argument("event-store-connection-string", "Data Source=.\\SQL2012;Initial Catalog=NDomain;Integrated Security=SSPI");
-var solution = "../source/NDomain.sln";
+var eventStoreDatabase = Argument("event-store-db", "NDomain");
+var ciDatabaseHost = Argument("ci-database-host", ".\\SQL2012");
 
 //////////////////////////////////////////////////////////////////////
 // PREPARATION
 //////////////////////////////////////////////////////////////////////
+var ciDatabaseConnectionString = $"Data Source={ciDatabaseHost}; Integrated Security=SSPI";
+var eventStoreConnectionString = $"Data Source={ciDatabaseHost}; Initial Catalog={eventStoreDatabase}; User Id={eventStoreUser}; Password={eventStorePassword}";
+var solution = "../source/NDomain.sln";
 var nugetOutputPath = "../nuget/.output";
 var nuspecPattern = "../**/NDomain*.nuspec";
 var runningOnBuildServer = TeamCity.IsRunningOnTeamCity;
-string eventStoreDatabase = null;
 string nugetVersion = null;
 GitVersion gitVersion = null;
 
@@ -115,27 +116,30 @@ Task("Run-Tests")
 	});
 
 Task("Set-Up-Test-Database")
-.Does(() =>
-{
-	eventStoreDatabase = Argument("event-store-db", "NDomain");
-	var connectionString = eventStoreConnectionString.Replace(string.Format("Initial Catalog={0}", eventStoreDatabase), string.Empty);
-
-	CreateDatabaseIfNotExists(connectionString, eventStoreDatabase);
-	ReplaceTextInFiles("./SetUpTests.sql", "%_USER_NAME_%", eventStoreUser);
-	ReplaceTextInFiles("./SetUpTests.sql", "%_USER_PASSWORD_%", eventStorePassword);
-	ExecuteSqlFile(connectionString, "./SetUpTests.sql");
-});
+	.Does(() =>
+	{
+		CreateDatabaseIfNotExists(ciDatabaseConnectionString, eventStoreDatabase);
+		ReplaceTextInFiles("./SetUpTests.sql", "%_USER_NAME_%", eventStoreUser);
+		ReplaceTextInFiles("./SetUpTests.sql", "%_USER_PASSWORD_%", eventStorePassword);
+		ReplaceTextInFiles("./SetUpTests.sql", "%_EVENT_STORE_DB_%", eventStoreDatabase);
+		ExecuteSqlFile(ciDatabaseConnectionString, "./SetUpTests.sql");
+	});
 
 Task("Tear-Down-Test-Database")
 	.IsDependentOn("Set-Up-Test-Database")
 	.IsDependentOn("Run-Tests")
 	.Does(() =>
 	{
-		var connectionString = eventStoreConnectionString.Replace(string.Format("Initial Catalog={0}", eventStoreDatabase), string.Empty);
-
-		DropDatabase(connectionString, eventStoreDatabase);
+		DropDatabase(ciDatabaseConnectionString, eventStoreDatabase);
 		ReplaceTextInFiles("./TearDownTests.sql", "%_USER_NAME_%", eventStoreUser);
-		ExecuteSqlFile(connectionString, "./TearDownTests.sql");
+		ReplaceTextInFiles("./TearDownTests.sql", "%_EVENT_STORE_DB_%", eventStoreDatabase);
+		ExecuteSqlFile(ciDatabaseConnectionString, "./TearDownTests.sql");
+
+		ReplaceTextInFiles("./SetUpTests.sql", eventStoreUser, "%_USER_NAME_%");
+		ReplaceTextInFiles("./SetUpTests.sql", eventStorePassword, "%_USER_PASSWORD_%");
+		ReplaceTextInFiles("./SetUpTests.sql", eventStoreDatabase, "%_EVENT_STORE_DB_%");
+		ReplaceTextInFiles("./TearDownTests.sql", eventStoreUser, "%_USER_NAME_%");
+		ReplaceTextInFiles("./TearDownTests.sql", eventStoreDatabase, "%_EVENT_STORE_DB_%");
 	});
 
 Task("Pack-NuGet-Packages")
@@ -232,12 +236,25 @@ Task("Get-GitVersion")
 			Information("BranchName: {0}", gitVersion.BranchName);
 			Information("Sha: {0}", gitVersion.Sha);
 
+			if(!string.IsNullOrWhiteSpace(gitVersion.PreReleaseTagWithDash))
+			{
+				Information("Pre-Release Label: {0}", gitVersion.PreReleaseLabel);
+				Information("Pre-Release Number: {0}", gitVersion.PreReleaseNumber);
+				Information("Pre-Release Tag: {0}", gitVersion.PreReleaseTag);
+				Information("Pre-Release Tag with dash: {0}", gitVersion.PreReleaseTagWithDash);
+			}
+			else
+			{
+				Information("No Pre-Release tag found. Versioning as a Release...");
+			}
+
 			nugetVersion = string.Format(
-				"{0}.{1}",
+				"{0}.{1}{2}",
 				gitVersion.MajorMinorPatch,
 				string.IsNullOrWhiteSpace(gitVersion.BuildMetaDataPadded)
 					? "00000" // this is 5 zeros because GitVersion.yml defines a padding of 5 digits for the BuildMetaDataPadded field
-					: gitVersion.BuildMetaDataPadded);
+					: gitVersion.BuildMetaDataPadded,
+					gitVersion.PreReleaseTagWithDash);
 
 			if(runningOnBuildServer)
 			{

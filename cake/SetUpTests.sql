@@ -1,18 +1,20 @@
 -- Create login
 IF NOT EXISTS (SELECT loginname
 								FROM master.dbo.syslogins
-								WHERE name='ndomain' AND dbname='NDomain')
+								WHERE name='%_USER_NAME_%' AND dbname='%_EVENT_STORE_DB_%')
 BEGIN
-	CREATE LOGIN [%_USER_NAME_%] WITH PASSWORD=N'%_USER_PASSWORD_%', DEFAULT_DATABASE=[NDomain], DEFAULT_LANGUAGE=[us_english], CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF
+	CREATE LOGIN [%_USER_NAME_%] WITH PASSWORD=N'%_USER_PASSWORD_%', DEFAULT_DATABASE=[%_EVENT_STORE_DB_%], DEFAULT_LANGUAGE=[us_english], CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF
 END
 
 -- Create user associated with login
 IF NOT EXISTS (SELECT name
 								FROM sys.database_principals
-								WHERE name = 'ndomain')
+								WHERE name = '%_USER_NAME_%')
 BEGIN
 	CREATE USER [%_USER_NAME_%] FOR LOGIN [%_USER_NAME_%]
 END
+
+USE %_EVENT_STORE_DB_%
 
 -- Create Agggregates and Events tables
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE object_id = OBJECT_ID(N'[Aggregates]'))
