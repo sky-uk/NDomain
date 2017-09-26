@@ -221,7 +221,7 @@ Task("Pack-Local-NuGet-Packages")
 	});
 
 Task("Get-GitVersion")
-		/*.WithCriteria(() => runningOnBuildServer)*/
+		.WithCriteria(() => runningOnBuildServer)
 		.Does(() => {
 			gitVersion = GitVersion(new GitVersionSettings
 			{
@@ -258,7 +258,7 @@ Task("Get-GitVersion")
 		});
 
 Task("Set-Assembly-Information-Files")
-	/*.WithCriteria(() => runningOnBuildServer)*/
+	.WithCriteria(() => runningOnBuildServer)
 	.IsDependentOn("Get-GitVersion")
 	.Does(() => {
 
