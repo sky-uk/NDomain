@@ -6,18 +6,17 @@
 
 public void PrintUsage()
 {
-	Console.WriteLine(string.Format("Usage: build.cake [options]{0}" +
-								"Options:{0}" +
-								"\t-target\t\t\t\tCake build entry point.\tDefaults to 'BuildOnCommit'.{0}" +
-								"\t-configuration\t\t\tBuild configuration [Debug|Release]. Defaults to 'Release'.{0}" +
-								"\t-verbosity\t\t\tVerbosity [Quiet|Minimal|Normal|Verbose|Diagnostic]. Defaults to 'Minimal'.{0}" +
-								"\t-nuget-repo\t\t\tThe Nuget repo to publish to. Mandatory for 'BuildOnCommit' target.{0}" +
-								"\t-ci-database-host\tThe CI DB connection string to use when setting up the database for tests to run. Defaults to local connection string{0}" +
-								"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{0}" +
-								"\t-event-store-user\t\tThe SQL database user to be created and used by the event store tests. Defaults to 'ndomain'{0}" +
-								"\t-event-store-password\t\tThe SQL database user password to be associated with the user. Defaults to 'ndomain'{0}" +
-								"\t-branch\t\tThe branch being built. Required{0}"
-								, Environment.NewLine));
+	Console.WriteLine($"Usage: build.cake [options]{Environment.NewLine}" +
+								$"Options:{Environment.NewLine}" +
+								$"\t-target\t\t\t\tCake build entry point.\tDefaults to 'BuildOnCommit'.{Environment.NewLine}" +
+								$"\t-configuration\t\t\tBuild configuration [Debug|Release]. Defaults to 'Release'.{Environment.NewLine}" +
+								$"\t-verbosity\t\t\tVerbosity [Quiet|Minimal|Normal|Verbose|Diagnostic]. Defaults to 'Minimal'.{Environment.NewLine}" +
+								$"\t-nuget-repo\t\t\tThe Nuget repo to publish to. Mandatory for 'BuildOnCommit' target.{Environment.NewLine}" +
+								$"\t-ci-database-host\tThe CI DB connection string to use when setting up the database for tests to run. Defaults to local connection string{Environment.NewLine}" +
+								$"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{Environment.NewLine}" +
+								$"\t-event-store-user\t\tThe SQL database user to be created and used by the event store tests. Defaults to 'ndomain'{Environment.NewLine}" +
+								$"\t-event-store-password\t\tThe SQL database user password to be associated with the user. Defaults to 'ndomain'{Environment.NewLine}" +
+								$"\t-branch\t\tThe branch being built. Required{Environment.NewLine}");
 }
 
 private Verbosity ParseVerbosity(string verbosity)
@@ -65,6 +64,7 @@ var nugetOutputPath = "../nuget/.output";
 var nuspecPattern = "../**/NDomain*.nuspec";
 var runningOnBuildServer = TeamCity.IsRunningOnTeamCity;
 string nugetVersion = null;
+string assemblyVersion = null;
 GitVersion gitVersion = null;
 
 //////////////////////////////////////////////////////////////////////
@@ -108,7 +108,7 @@ Task("Run-Tests")
 	.IsDependentOn("Set-Up-Test-Database")
 	.Does(() =>
 	{
-		NUnit3(string.Format("../**/bin/{0}/*.Tests.dll",configuration), new NUnit3Settings
+		NUnit3($"../**/bin/{configuration}/*.Tests.dll", new NUnit3Settings
 		{
 			Configuration = configuration,
 			TeamCity = TeamCity.IsRunningOnTeamCity
@@ -193,8 +193,8 @@ Task("Pack-Local-NuGet-Packages")
 		var version = "1.0.0.0";
 		var nugetLocalDir = Argument<string>("nuget-local-dir", "D:\\BSkyB\\LocalNuGetPackages");
 
-		Information(string.Format("Using version {0} for nuget packages", version));
-		Information(string.Format("Deploying packages to {0}", nugetLocalDir));
+		Information($"Using version {version} for nuget packages");
+		Information($"Deploying packages to {nugetLocalDir}");
 
 		var settings = new NuGetPackSettings
 		{
@@ -220,7 +220,7 @@ Task("Pack-Local-NuGet-Packages")
 	});
 
 Task("Get-GitVersion")
-		.WithCriteria(() => runningOnBuildServer)
+		/*.WithCriteria(() => runningOnBuildServer)*/
 		.Does(() => {
 			gitVersion = GitVersion(new GitVersionSettings
 			{
@@ -229,32 +229,26 @@ Task("Get-GitVersion")
 				WorkingDirectory = "../"
 			});
 
-			Information("AssemblySemVer: {0}", gitVersion.AssemblySemVer);
-			Information("MajorMinorPatch: {0}", gitVersion.MajorMinorPatch);
-			Information("NuGetVersionV2: {0}", gitVersion.NuGetVersionV2);
-			Information("FullSemVer: {0}", gitVersion.FullSemVer);
-			Information("BranchName: {0}", gitVersion.BranchName);
-			Information("Sha: {0}", gitVersion.Sha);
+			Information($"AssemblySemVer: {gitVersion.AssemblySemVer}{Environment.NewLine}"+
+									$"SemVer: {gitVersion.AssemblySemVer}{Environment.NewLine}" +
+									$"FullSemVer: {gitVersion.FullSemVer}{Environment.NewLine}" +
+									$"MajorMinorPatch: {gitVersion.MajorMinorPatch}{Environment.NewLine}" +
+									$"NuGetVersionV2: {gitVersion.NuGetVersionV2}{Environment.NewLine}" +
+									$"NuGetVersion: {gitVersion.NuGetVersion}{Environment.NewLine}" +
+									$"BranchName: {gitVersion.BranchName}{Environment.NewLine}" +
+									$"Sha: {gitVersion.Sha}{Environment.NewLine}" +
+									$"Pre-Release Label: {gitVersion.PreReleaseLabel}{Environment.NewLine}" +
+									$"Pre-Release Number: {gitVersion.PreReleaseNumber}{Environment.NewLine}" +
+									$"Pre-Release Tag: {gitVersion.PreReleaseTag}{Environment.NewLine}" +
+									$"Pre-Release Tag with dash: {gitVersion.PreReleaseTagWithDash}{Environment.NewLine}");
 
-			if(!string.IsNullOrWhiteSpace(gitVersion.PreReleaseTagWithDash))
-			{
-				Information("Pre-Release Label: {0}", gitVersion.PreReleaseLabel);
-				Information("Pre-Release Number: {0}", gitVersion.PreReleaseNumber);
-				Information("Pre-Release Tag: {0}", gitVersion.PreReleaseTag);
-				Information("Pre-Release Tag with dash: {0}", gitVersion.PreReleaseTagWithDash);
-			}
-			else
+			if(string.IsNullOrWhiteSpace(gitVersion.PreReleaseTagWithDash))
 			{
 				Information("No Pre-Release tag found. Versioning as a Release...");
 			}
 
-			nugetVersion = string.Format(
-				"{0}.{1}{2}",
-				gitVersion.MajorMinorPatch,
-				string.IsNullOrWhiteSpace(gitVersion.BuildMetaDataPadded)
-					? "00000" // this is 5 zeros because GitVersion.yml defines a padding of 5 digits for the BuildMetaDataPadded field
-					: gitVersion.BuildMetaDataPadded,
-					gitVersion.PreReleaseTagWithDash);
+			nugetVersion = gitVersion.NuGetVersionV2;
+			assemblyVersion = gitVersion.AssemblySemVer;
 
 			if(runningOnBuildServer)
 			{
@@ -263,14 +257,14 @@ Task("Get-GitVersion")
 		});
 
 Task("Set-Assembly-Information-Files")
-	.WithCriteria(() => runningOnBuildServer)
+	/*.WithCriteria(() => runningOnBuildServer)*/
 	.IsDependentOn("Get-GitVersion")
 	.Does(() => {
 
 		var assemblyInfos = GetFiles("../**/Properties/AssemblyInfo.cs");
 		foreach(var assemblyInfoPath in assemblyInfos)
 		{
-			Information(string.Format("Found assembly info in {0}", assemblyInfoPath.FullPath));
+			Information($"Found assembly info in {assemblyInfoPath.FullPath}");
 			var assemblyInfo = ParseAssemblyInfo(assemblyInfoPath);
 
 			var assemblyInfoSettings = new AssemblyInfoSettings {
@@ -278,12 +272,12 @@ Task("Set-Assembly-Information-Files")
 				Description = assemblyInfo.Description,
 				Company = assemblyInfo.Company,
 				Product = assemblyInfo.Product,
-				Version = nugetVersion,
-				FileVersion = nugetVersion,
+				Version = assemblyVersion,
+				FileVersion = assemblyVersion,
 				Guid = assemblyInfo.Guid,
 				ComVisible = assemblyInfo.ComVisible,
 				Trademark = assemblyInfo.Trademark,
-				Copyright = string.Format("Copyright © BSkyB {0}", DateTime.Now.Year)
+				Copyright = $"Copyright © BSkyB {DateTime.Now.Year}"
 			};
 
 			if(assemblyInfo.InternalsVisibleTo != null && assemblyInfo.InternalsVisibleTo.Any()){
@@ -304,7 +298,7 @@ Task("Transform-Files")
 			{
 				var path = f.GetDirectory().FullPath;
 				var transformFileName = f.FullPath;
-				var sourceFileName = String.Format("{0}/bin/{1}/{2}.dll.config", path, configuration, f.GetDirectory().Segments.Last());
+				var sourceFileName = $"{path}/bin/{configuration}/{f.GetDirectory().Segments.Last()}.dll.config";
 
 				var sourceFile      = File(sourceFileName);
 				var transformFile   = File(transformFileName);
@@ -313,10 +307,10 @@ Task("Transform-Files")
 
 				ReplaceTextInFiles(sourceFileName, "%%event-store-connection-string%%", eventStoreConnectionString);
 
-				Information(String.Format("Transformed {0}{1}", sourceFileName, Environment.NewLine));
+				Information($"Transformed {sourceFileName}{Environment.NewLine}");
 			}
 
-			Information(String.Format("Connection strings:{1}EventStore:{0}{1}", eventStoreConnectionString, Environment.NewLine));
+			Information($"Connection strings:{Environment.NewLine}EventStore:{eventStoreConnectionString}{Environment.NewLine}");
 		});
 
 //////////////////////////////////////////////////////////////////////

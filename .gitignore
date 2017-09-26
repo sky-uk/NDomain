@@ -112,5 +112,5 @@ UpgradeLog*.XML
 
 #CakePackages
 *.md5sum
-/cake/tools/*
+/cake/tools/*/
 /cake/tools/nuget.exe
