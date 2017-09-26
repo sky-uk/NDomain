@@ -105,6 +105,7 @@ Task("Build")
 
 Task("Run-Tests")
 	.IsDependentOn("Build")
+	.IsDependentOn("Transform-Files")
 	.IsDependentOn("Set-Up-Test-Database")
 	.Does(() =>
 	{
