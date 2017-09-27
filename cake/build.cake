@@ -254,7 +254,7 @@ Task("Get-GitVersion")
 				Information("No Pre-Release tag found. Versioning as a Release...");
 			}
 
-			nugetVersion = gitVersion.NuGetVersionV2;
+			nugetVersion = gitVersion.BranchName == "master" ? $"{gitVersion.MajorMinorPatch}.{gitVersion.PreReleaseNumber}" : gitVersion.NuGetVersionV2;
 			assemblyVersion = gitVersion.AssemblySemVer;
 
 			if(runningOnBuildServer)
