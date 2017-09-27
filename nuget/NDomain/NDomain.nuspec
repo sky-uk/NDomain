@@ -7,7 +7,7 @@
     <authors>Manuel Felicio</authors>
     <owners>Manuel Felicio</owners>
     <licenseUrl>http://opensource.org/licenses/mit-license.php</licenseUrl>
-    <projectUrl>http://github.com/mfelicio/NDomain</projectUrl>
+    <projectUrl>https://github.com/sky-uk/skystore-contrib-ndomain</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>NDomain is an extensible, fast, powerful framework to help you build robust and scalable .NET applications using Domain Driven Design, Event Sourcing and CQRS architectures.</description>
     <copyright>Copyright 2015 Manuel Felicio</copyright>

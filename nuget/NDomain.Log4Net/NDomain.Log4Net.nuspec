@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>NDomain.Serilog</id>
+    <id>NDomain.Log4Net</id>
     <version>0.1.0</version>
-    <title>NDomain.Serilog</title>
+    <title>NDomain.Log4Net</title>
     <authors>Manuel Felicio</authors>
     <owners>Manuel Felicio</owners>
     <licenseUrl>http://opensource.org/licenses/mit-license.php</licenseUrl>
     <projectUrl>https://github.com/sky-uk/skystore-contrib-ndomain</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Serilog logger for NDomain, an extensible DDD CQRS ES framework.</description>
+    <description>Log4Net logger for NDomain, an extensible DDD CQRS ES framework.</description>
     <copyright>Copyright 2015 Manuel Felicio</copyright>
-    <tags>serilog ddd cqrs es eventsourcing domain-driven-design messaging</tags>
+    <tags>log4net ddd cqrs es eventsourcing domain-driven-design messaging</tags>
     <dependencies>
       <dependency id="NDomain" version="0.1.0" />
-      <dependency id="Serilog" version="1.5.11"  />
+      <dependency id="log4net" version="2.0.8"  />
     </dependencies>
   </metadata>
 </package>

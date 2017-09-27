@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDomain.Sql", "NDomain.Sql\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDomain.Sql.Tests", "NDomain.Sql.Tests\NDomain.Sql.Tests.csproj", "{4446F063-F9EC-449A-AE4D-0A8D1186892A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDomain.Log4Net", "NDomain.Log4Net\NDomain.Log4Net.csproj", "{CD80F023-8B14-4009-AC07-89BF2087FE96}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +81,14 @@ Global
 		{4446F063-F9EC-449A-AE4D-0A8D1186892A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4446F063-F9EC-449A-AE4D-0A8D1186892A}.Release|x64.ActiveCfg = Release|Any CPU
 		{4446F063-F9EC-449A-AE4D-0A8D1186892A}.Release|x64.Build.0 = Release|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Debug|x64.Build.0 = Debug|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Release|x64.ActiveCfg = Release|Any CPU
+		{CD80F023-8B14-4009-AC07-89BF2087FE96}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

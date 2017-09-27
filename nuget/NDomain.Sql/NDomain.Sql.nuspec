@@ -1,20 +1,21 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>NDomain.Serilog</id>
+    <id>NDomain.Sql</id>
     <version>0.1.0</version>
-    <title>NDomain.Serilog</title>
+    <title>NDomain.Sql</title>
     <authors>Manuel Felicio</authors>
     <owners>Manuel Felicio</owners>
     <licenseUrl>http://opensource.org/licenses/mit-license.php</licenseUrl>
     <projectUrl>https://github.com/sky-uk/skystore-contrib-ndomain</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Serilog logger for NDomain, an extensible DDD CQRS ES framework.</description>
+    <description>Sql Transports and EventStore for NDomain, an extensible DDD CQRS ES framework.</description>
     <copyright>Copyright 2015 Manuel Felicio</copyright>
-    <tags>serilog ddd cqrs es eventsourcing domain-driven-design messaging</tags>
+    <tags>sql ddd cqrs es eventsourcing domain-driven-design messaging</tags>
     <dependencies>
       <dependency id="NDomain" version="0.1.0" />
-      <dependency id="Serilog" version="1.5.11"  />
+			<dependency id="Dapper" version="1.50.2" />
+			<dependency id="Newtonsoft.Json" version="9.0.1" />
     </dependencies>
   </metadata>
 </package>
