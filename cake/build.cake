@@ -144,7 +144,7 @@ Task("Tear-Down-Test-Database")
 	});
 
 Task("Pack-NuGet-Packages")
-	.WithCriteria(() => runningOnBuildServer)
+	.WithCriteria(() => runningOnBuildServer && gitVersion.BranchName == "master")
 	.IsDependentOn("Tear-Down-Test-Database")
 	.IsDependentOn("Get-GitVersion")
 	.Does(() =>
@@ -157,8 +157,7 @@ Task("Pack-NuGet-Packages")
 			{
 				{"Configuration", configuration}
 			},
-			Version = nugetVersion,
-
+			Version = nugetVersion
 		};
 
 		EnsureDirectoryExists(Directory(nugetOutputPath).Path);
@@ -171,7 +170,7 @@ Task("Pack-NuGet-Packages")
 	});
 
 Task("Publish-NuGet-Packages")
-	.WithCriteria(() => runningOnBuildServer)
+	.WithCriteria(() => runningOnBuildServer && gitVersion.BranchName == "master")
 	.IsDependentOn("Pack-NuGet-Packages")
 	.Does(() =>
 	{
@@ -208,7 +207,7 @@ Task("Pack-Local-NuGet-Packages")
 			Dependencies = new List<NuSpecDependency>(),
 			Version = version,
 			DevelopmentDependency = true,
-			Symbols = true,
+			Symbols = true
 		};
 
 		EnsureDirectoryExists(Directory(nugetLocalDir).Path);
@@ -251,7 +250,7 @@ Task("Get-GitVersion")
 				Information("No Pre-Release tag found. Versioning as a Release...");
 			}
 
-			nugetVersion = $"{gitVersion.MajorMinorPatch}.{gitVersion.BuildMetaDataPadded}";
+			nugetVersion = $"{gitVersion.MajorMinorPatch}{(!string.IsNullOrWhiteSpace(gitVersion.BuildMetaDataPadded) ? $".{gitVersion.BuildMetaDataPadded}" : string.Empty)}";
 			assemblyVersion = gitVersion.AssemblySemVer;
 
 			if(runningOnBuildServer)
@@ -285,7 +284,8 @@ Task("Set-Assembly-Information-Files")
 				Copyright = $"Copyright © BSkyB {DateTime.Now.Year}"
 			};
 
-			if(assemblyInfo.InternalsVisibleTo != null && assemblyInfo.InternalsVisibleTo.Any()){
+			if(assemblyInfo.InternalsVisibleTo != null && assemblyInfo.InternalsVisibleTo.Any())
+			{
 				assemblyInfoSettings.InternalsVisibleTo = assemblyInfo.InternalsVisibleTo;
 			}
 
