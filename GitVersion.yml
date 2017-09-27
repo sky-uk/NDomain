@@ -1,4 +1,4 @@
-mode: ContinuousDeployment
+mode: MainLine
 tag-prefix: '[Rr]eleases?[/-]'
 branches: {}
 ignore:

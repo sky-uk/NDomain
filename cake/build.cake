@@ -145,7 +145,7 @@ Task("Tear-Down-Test-Database")
 	});
 
 Task("Pack-NuGet-Packages")
-	.WithCriteria(() => runningOnBuildServer && gitVersion.BranchName == "master")
+	.WithCriteria(() => runningOnBuildServer /*&& gitVersion.BranchName == "master"*/)
 	.IsDependentOn("Tear-Down-Test-Database")
 	.IsDependentOn("Get-GitVersion")
 	.Does(() =>
@@ -173,7 +173,7 @@ Task("Pack-NuGet-Packages")
 	});
 
 Task("Publish-NuGet-Packages")
-	.WithCriteria(() => runningOnBuildServer && gitVersion.BranchName == "master")
+	.WithCriteria(() => runningOnBuildServer /*&& gitVersion.BranchName == "master"*/)
 	.IsDependentOn("Pack-NuGet-Packages")
 	.Does(() =>
 	{
