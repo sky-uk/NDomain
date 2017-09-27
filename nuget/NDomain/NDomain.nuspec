@@ -15,5 +15,8 @@
     <dependencies>
       <dependency id="Newtonsoft.Json" version="6.0.4" />
     </dependencies>
+		<files>
+				<file src="..\source\NDomain\bin\$configuration$\$id$.dll"/>
+		</files>
   </metadata>
 </package>

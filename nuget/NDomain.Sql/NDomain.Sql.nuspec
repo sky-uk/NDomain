@@ -17,5 +17,8 @@
 			<dependency id="Dapper" version="1.50.2" />
 			<dependency id="Newtonsoft.Json" version="9.0.1" />
     </dependencies>
+		<files>
+				<file src="..\source\NDomain.Sql\bin\$configuration$\$id$.dll" />
+		</files>
   </metadata>
 </package>
