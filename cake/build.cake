@@ -241,14 +241,17 @@ Task("Get-GitVersion")
 									$"Pre-Release Label: {gitVersion.PreReleaseLabel}{Environment.NewLine}" +
 									$"Pre-Release Number: {gitVersion.PreReleaseNumber}{Environment.NewLine}" +
 									$"Pre-Release Tag: {gitVersion.PreReleaseTag}{Environment.NewLine}" +
-									$"Pre-Release Tag with dash: {gitVersion.PreReleaseTagWithDash}{Environment.NewLine}");
+									$"Pre-Release Tag with dash: {gitVersion.PreReleaseTagWithDash}{Environment.NewLine}" +
+									$"Build MetaData: {gitVersion.BuildMetaData}{Environment.NewLine}" +
+									$"Build MetaData Padded: {gitVersion.BuildMetaDataPadded}{Environment.NewLine}" +
+									$"Full Build MetaData: {gitVersion.FullBuildMetaData}{Environment.NewLine}");
 
 			if(string.IsNullOrWhiteSpace(gitVersion.PreReleaseTagWithDash))
 			{
 				Information("No Pre-Release tag found. Versioning as a Release...");
 			}
 
-			nugetVersion = gitVersion.NuGetVersionV2;
+			nugetVersion = $"{gitVersion.MajorMinorPatch}.{gitVersion.BuildMetaDataPadded}";
 			assemblyVersion = gitVersion.AssemblySemVer;
 
 			if(runningOnBuildServer)
@@ -275,6 +278,7 @@ Task("Set-Assembly-Information-Files")
 				Product = assemblyInfo.Product,
 				Version = assemblyVersion,
 				FileVersion = assemblyVersion,
+				InformationalVersion = nugetVersion,
 				Guid = assemblyInfo.Guid,
 				ComVisible = assemblyInfo.ComVisible,
 				Trademark = assemblyInfo.Trademark,
