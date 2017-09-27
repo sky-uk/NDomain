@@ -18,4 +18,7 @@
 			<dependency id="Newtonsoft.Json" version="9.0.1" />
     </dependencies>
   </metadata>
+	<files>
+			<file src="..\..\source\NDomain.Sql\bin\Release\NDomain.Sql.dll" target="lib\net45\"/>
+	</files>
 </package>

@@ -17,4 +17,7 @@
       <dependency id="NLog" version="3.2.0.0"  />
     </dependencies>
   </metadata>
+	<files>
+			<file src="..\..\source\NDomain.NLog\bin\Release\NDomain.NLog.dll" target="lib\net45\"/>
+	</files>
 </package>

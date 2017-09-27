@@ -17,4 +17,7 @@
       <dependency id="Serilog" version="1.5.11"  />
     </dependencies>
   </metadata>
+	<files>
+			<file src="..\..\source\NDomain.Serilog\bin\Release\NDomain.Serilog.dll" target="lib\net45\" />
+	</files>
 </package>

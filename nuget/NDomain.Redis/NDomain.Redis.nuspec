@@ -18,4 +18,7 @@
       <dependency id="StackExchange.Redis" version="1.0.481"  />
     </dependencies>
   </metadata>
+	<files>
+			<file src="..\..\source\NDomain.Redis\bin\Release\NDomain.Redis.dll" target="lib\net45\"/>
+	</files>
 </package>

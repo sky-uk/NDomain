@@ -3,6 +3,7 @@
 #addin "nuget:?package=Cake.XdtTransform";
 #addin "nuget:?package=Cake.SqlServer";
 #addin "nuget:?package=Cake.FileHelpers";
+#tool "nuget:?package=NUnit.Extension.TeamCityEventListener"
 
 public void PrintUsage()
 {
@@ -112,7 +113,7 @@ Task("Run-Tests")
 		NUnit3($"../**/bin/{configuration}/*.Tests.dll", new NUnit3Settings
 		{
 			Configuration = configuration,
-			TeamCity = TeamCity.IsRunningOnTeamCity
+			TeamCity = runningOnBuildServer
 		});
 	});
 
@@ -165,6 +166,8 @@ Task("Pack-NuGet-Packages")
 		var nuspecs = GetFiles(nuspecPattern);
 		foreach(var file in nuspecs)
 		{
+			settings.WorkingDirectory = file.GetDirectory();
+			ReplaceTextInFiles(file.ToString(), "$configuration$", configuration);
 			NuGetPack(file.ToString(), settings);
 		}
 	});
@@ -204,7 +207,6 @@ Task("Pack-Local-NuGet-Packages")
 			{
 				{"Configuration", configuration}
 			},
-			Dependencies = new List<NuSpecDependency>(),
 			Version = version,
 			DevelopmentDependency = true,
 			Symbols = true
@@ -215,6 +217,8 @@ Task("Pack-Local-NuGet-Packages")
 		var nuspecs = GetFiles(nuspecPattern);
 		foreach(var file in nuspecs)
 		{
+			settings.WorkingDirectory = file.GetDirectory();
+			ReplaceTextInFiles(file.ToString(), "$configuration$", configuration);
 			NuGetPack(file.ToString(), settings);
 		}
 	});
@@ -250,7 +254,7 @@ Task("Get-GitVersion")
 				Information("No Pre-Release tag found. Versioning as a Release...");
 			}
 
-			nugetVersion = $"{gitVersion.MajorMinorPatch}{(!string.IsNullOrWhiteSpace(gitVersion.BuildMetaDataPadded) ? $".{gitVersion.BuildMetaDataPadded}" : string.Empty)}";
+			nugetVersion = gitVersion.NuGetVersionV2;
 			assemblyVersion = gitVersion.AssemblySemVer;
 
 			if(runningOnBuildServer)

@@ -17,4 +17,7 @@
       <dependency id="log4net" version="2.0.8"  />
     </dependencies>
   </metadata>
+	<files>
+			<file src="..\..\source\NDomain.Log4Net\bin\Release\NDomain.Log4Net.dll" target="lib\net45\"/>
+	</files>
 </package>

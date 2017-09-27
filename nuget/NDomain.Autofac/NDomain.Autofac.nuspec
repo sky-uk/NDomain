@@ -17,4 +17,7 @@
       <dependency id="Autofac" version="3.5.0" />
     </dependencies>
   </metadata>
+	<files>
+			<file src="..\..\source\NDomain.Autofac\bin\Release\NDomain.Autofac.dll" target="lib\net45\"/>
+	</files>
 </package>

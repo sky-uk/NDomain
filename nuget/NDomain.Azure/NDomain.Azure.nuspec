@@ -19,4 +19,7 @@
       <dependency id="Newtonsoft.Json" version="6.0.4" />
     </dependencies>
   </metadata>
+	<files>
+			<file src="..\..\source\NDomain.Azure\bin\Release\NDomain.Azure.dll" target="lib\net45\"/>
+	</files>
 </package>
