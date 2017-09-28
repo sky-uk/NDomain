@@ -85,7 +85,7 @@ Task("Clean")
 Task("Restore-NuGet-Packages")
 	.Does(() =>
 	{
-    NuGetRestore(solution, new NuGetRestoreSettings
+		NuGetRestore(solution, new NuGetRestoreSettings
 		{
 			Verbosity = MapVerbosityToNuGetVerbosity(verbosity)
 		});
@@ -121,10 +121,13 @@ Task("Set-Up-Test-Database")
 	.Does(() =>
 	{
 		CreateDatabaseIfNotExists(ciDatabaseConnectionString, eventStoreDatabase);
-		ReplaceTextInFiles("./SetUpTests.sql", "%_USER_NAME_%", eventStoreUser);
-		ReplaceTextInFiles("./SetUpTests.sql", "%_USER_PASSWORD_%", eventStorePassword);
-		ReplaceTextInFiles("./SetUpTests.sql", "%_EVENT_STORE_DB_%", eventStoreDatabase);
-		ExecuteSqlFile(ciDatabaseConnectionString, "./SetUpTests.sql");
+		
+		var command = FileReadText("./SetUpTests.sql");
+		command = command.Replace("%_USER_NAME_%", eventStoreUser)
+						 .Replace("%_USER_PASSWORD_%", eventStorePassword)
+						 .Replace("%_EVENT_STORE_DB_%", eventStoreDatabase);
+		
+		ExecuteSqlCommand(ciDatabaseConnectionString, command);
 	});
 
 Task("Tear-Down-Test-Database")
@@ -133,15 +136,12 @@ Task("Tear-Down-Test-Database")
 	.Does(() =>
 	{
 		DropDatabase(ciDatabaseConnectionString, eventStoreDatabase);
-		ReplaceTextInFiles("./TearDownTests.sql", "%_USER_NAME_%", eventStoreUser);
-		ReplaceTextInFiles("./TearDownTests.sql", "%_EVENT_STORE_DB_%", eventStoreDatabase);
-		ExecuteSqlFile(ciDatabaseConnectionString, "./TearDownTests.sql");
-
-		ReplaceTextInFiles("./SetUpTests.sql", eventStoreUser, "%_USER_NAME_%");
-		ReplaceTextInFiles("./SetUpTests.sql", eventStorePassword, "%_USER_PASSWORD_%");
-		ReplaceTextInFiles("./SetUpTests.sql", eventStoreDatabase, "%_EVENT_STORE_DB_%");
-		ReplaceTextInFiles("./TearDownTests.sql", eventStoreUser, "%_USER_NAME_%");
-		ReplaceTextInFiles("./TearDownTests.sql", eventStoreDatabase, "%_EVENT_STORE_DB_%");
+		
+		var command = FileReadText("./TearDownTests.sql");
+		command = command.Replace("%_USER_NAME_%", eventStoreUser)
+						 .Replace("%_EVENT_STORE_DB_%", eventStoreDatabase);
+		
+		ExecuteSqlCommand(ciDatabaseConnectionString, command);
 	});
 
 Task("Pack-NuGet-Packages")
