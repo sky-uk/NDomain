@@ -54,7 +54,7 @@ namespace NDomain.Helpers
         {
             var stateType = typeof(TState);
 
-            var mutateMethods = stateType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            var mutateMethods = stateType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                                          .Where(m => m.Name.StartsWith("On") && m.GetParameters().Length == 1 && m.ReturnType == typeof(void))
                                          .ToArray();
 
@@ -103,7 +103,7 @@ namespace NDomain.Helpers
         public static Dictionary<Type, Func<THandler, IEvent, Task>> FindEventHandlerMethods<THandler>()
         {
             var methods = typeof(THandler)
-                                  .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                                  .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                                   .Where(m => m.Name == "On"
                                            && m.GetParameters().Length == 1 && typeof(IEvent).IsAssignableFrom(m.GetParameters()[0].ParameterType)
                                            && m.GetParameters()[0].ParameterType.IsGenericType
@@ -119,7 +119,7 @@ namespace NDomain.Helpers
         public static Dictionary<Type, Func<THandler, IAggregateEvent, Task>> FindAggregateEventHandlerMethods<THandler>()
         {
             var methods = typeof(THandler)
-                                  .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                                  .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                                   .Where(m => m.Name == "On"
                                            && m.GetParameters().Length == 1 && typeof(IAggregateEvent).IsAssignableFrom(m.GetParameters()[0].ParameterType)
                                            && m.GetParameters()[0].ParameterType.IsGenericType
