@@ -25,6 +25,8 @@ namespace NDomain.Configuration
         /// </remarks>
         public IEventStoreDb EventStoreDb { get; set; }
 
+        public IEventStoreBus EventStoreBus { get; set; }
+
         public EventSourcingConfigurator(ContextBuilder builder)
             : base(builder)
         {
@@ -57,6 +59,12 @@ namespace NDomain.Configuration
             return this;
         }
 
+        public EventSourcingConfigurator UseCustomEventStoreBus(IEventStoreBus bus)
+        {
+            this.EventStoreBus = bus;
+            return this;
+        }
+
         private void OnConfiguring(ContextBuilder builder)
         {
             var serializer = EventStoreSerializer.FromAggregateTypes(this.aggregateTypes);
@@ -66,7 +74,7 @@ namespace NDomain.Configuration
 
             builder.EventStore = new Lazy<IEventStore>(
                 () => new EventStore(builder.EventStoreDb.Value,
-                                     new EventBus(builder.MessageBus.Value),
+                                     this.EventStoreBus ?? new EventBus(builder.MessageBus.Value),
                                      serializer,
                                      builder.LoggerFactory.Value));
         }
