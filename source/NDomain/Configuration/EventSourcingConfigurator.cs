@@ -59,6 +59,11 @@ namespace NDomain.Configuration
             return this;
         }
 
+        /// <summary>
+        /// Configures the custom event store bus that will be used by event store to publish aggregate events
+        /// </summary>
+        /// <param name="bus"></param>
+        /// <returns></returns>
         public EventSourcingConfigurator UseCustomEventStoreBus(IEventStoreBus bus)
         {
             this.EventStoreBus = bus;
