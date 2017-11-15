@@ -15,6 +15,14 @@ namespace NDomain.EventSourcing
         Task<IEnumerable<IAggregateEvent<JObject>>> Load(string eventStreamId);
 
         /// <summary>
+        /// Loads all events for a given transaction for a given event stream
+        /// </summary>
+        /// <param name="eventStreamId"></param>
+        /// <param name="transactionId"></param>
+        /// <returns></returns>
+        Task<IEnumerable<IAggregateEvent<JObject>>> Load(string eventStreamId, string transactionId);
+
+        /// <summary>
         /// Loads events for a given event stream, from start to end sequenceIds, inclusive
         /// </summary>
         /// <param name="eventStreamId"></param>

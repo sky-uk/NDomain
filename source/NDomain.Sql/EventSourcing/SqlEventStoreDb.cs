@@ -246,6 +246,17 @@ namespace NDomain.Sql.EventSourcing
             return await Load(query, args).ConfigureAwait(false);
         }
 
+        public async Task<IEnumerable<IAggregateEvent<JObject>>> Load(string eventStreamId, string transactionId)
+        {
+            string query = string.Format(
+                SqlStatements.GetEventsByStreamAndTransaction,
+                _sqlNames.SchemaName,
+                _sqlNames.EventTableName);
+
+            var args = new { aggregateId = eventStreamId, transactionId = transactionId };
+            return await Load(query, args).ConfigureAwait(false);
+        }
+
         public async Task<IEnumerable<IAggregateEvent<JObject>>> LoadRange(string eventStreamId, int start, int end)
         {
             string query = string.Format(
@@ -340,6 +351,7 @@ namespace NDomain.Sql.EventSourcing
                     @transactionId)";
             #endregion
             internal const string GetEventsByStreamId = "select * from {0}.{1} where aggregate_id = @aggregateId order by event_seq";
+            internal const string GetEventsByStreamAndTransaction = "select * from {0}.{1} where aggregate_id = @aggregateId and transaction_id = @transactionId order by event_seq";
             internal const string GetEventsInRangeQuery = "select * from {0}.{1} where aggregate_id = @aggregateId and event_seq >= @start and event_seq <= @end order by event_seq";
             internal const string GetUncommittedEventsQuery = "select * from {0}.{1} where aggregate_id = @aggregateId and transaction_id = @transactionId and committed = 0 order by event_seq";
             internal const string ReadAggregateVersion = "select [aggregate_event_seq] from {0}.{1} where [aggregate_id] = @aggregateId";

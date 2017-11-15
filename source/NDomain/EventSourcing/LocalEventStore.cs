@@ -47,6 +47,24 @@ namespace NDomain.EventSourcing
             }
         }
 
+        public Task<IEnumerable<IAggregateEvent<JObject>>> Load(string eventStreamId, string transactionId)
+        {
+            List<StoredEvent> eventStream;
+            if (!this.eventStreams.TryGetValue(eventStreamId, out eventStream))
+            {
+                return Task.FromResult(Enumerable.Empty<IAggregateEvent<JObject>>());
+            }
+
+
+            lock (eventStream)
+            {
+                IEnumerable<IAggregateEvent<JObject>> events = eventStream
+                    .Where(e => e.TransactionId == transactionId)
+                    .Select(e => e.Source).ToArray();
+                return Task.FromResult(events);
+            }
+        }
+
         public Task<IEnumerable<IAggregateEvent<JObject>>> LoadRange(string eventStreamId, int start, int end)
         {
             List<StoredEvent> eventStream;

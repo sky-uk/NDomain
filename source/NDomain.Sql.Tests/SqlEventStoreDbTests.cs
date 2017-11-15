@@ -321,6 +321,40 @@ namespace NDomain.Sql.Tests
         }
 
         [Test]
+        public async Task Load_Should_ReturnOnlyEventsRegardingProvidedTransaction()
+        {
+            var aggregateId = _fixture.Create<string>();
+
+            var batch1 = _testData.CreateEvents<TestAggregateRoot>(5, aggregateId, 1);
+            var batch2 = _testData.CreateEvents<TestAggregateRoot>(5, aggregateId, 6);
+            var batch3 = _testData.CreateEvents<TestAggregateRoot>(5, aggregateId, 11);
+
+            var transaction1 = _fixture.Create<string>();
+            var transaction2 = _fixture.Create<string>();
+            var transaction3 = _fixture.Create<string>();
+
+            await _store.Append(aggregateId, transaction1, 0, batch1);
+            await _store.Append(aggregateId, transaction2, 5, batch2);
+            await _store.Append(aggregateId, transaction3, 10, batch3);
+            await _store.Commit(aggregateId, transaction1);
+            await _store.Commit(aggregateId, transaction2);
+            await _store.Commit(aggregateId, transaction3);
+
+            var trans2Events = await _store.Load(aggregateId, transaction2);
+
+            var trans2EvtArray = trans2Events.ToArray();
+
+            Assert.AreEqual(5, trans2Events.Count());
+
+            for (int i = 0; i < trans2EvtArray.Length; ++i)
+            {
+                var evt = trans2EvtArray[i];
+                Assert.AreEqual(aggregateId, evt.AggregateId);
+                Assert.AreEqual(i + 6, evt.SequenceId);
+            }
+        }
+
+        [Test]
         public async Task LoadRange_Should_ReturnAllAggregateEventsContainedInRange()
         {
             var aggregateId = _fixture.Create<string>();
