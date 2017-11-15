@@ -17,6 +17,7 @@ public void PrintUsage()
 								$"\t-event-store-database\t\tThe SQL database to be created and used by the event store tests. Defaults to 'NDomain'{Environment.NewLine}" +
 								$"\t-event-store-user\t\tThe SQL database user to be created and used by the event store tests. Defaults to 'ndomain'{Environment.NewLine}" +
 								$"\t-event-store-password\t\tThe SQL database user password to be associated with the user. Defaults to 'ndomain'{Environment.NewLine}" +
+								$"\t-nuget-api-key\tThe Api Key to use when pushing NuGet packages to the feed.{0}" +
 								$"\t-branch\t\tThe branch being built. Required{Environment.NewLine}");
 }
 
@@ -177,11 +178,13 @@ Task("Publish-NuGet-Packages")
 	.IsDependentOn("Pack-NuGet-Packages")
 	.Does(() =>
 	{
+		var apiKey = Argument<string>("nuget-api-key");
 		var nugetRepo = Argument<string>("nuget-repo");
 
 		var nugets = GetFiles(nugetOutputPath + "/*.nupkg");
 		NuGetPush(nugets, new NuGetPushSettings
 		{
+			ApiKey = apiKey,
 			Source = nugetRepo,
 			Verbosity = MapVerbosityToNuGetVerbosity(verbosity)
 		});
