@@ -49,6 +49,7 @@ namespace NDomain.Configuration
             return this;
         }
 
+
         /// <summary>
         /// Configures the local EventStore, which should be used only for test and learning purposes.
         /// </summary>
