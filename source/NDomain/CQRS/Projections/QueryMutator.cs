@@ -1,6 +1,8 @@
 ﻿using NDomain.Helpers;
 using System;
 using System.Collections.Generic;
+using NDomain.EventSourcing;
+using Newtonsoft.Json;
 
 namespace NDomain.CQRS.Projections
 {
@@ -13,19 +15,21 @@ namespace NDomain.CQRS.Projections
         {
             _handlers = ReflectionUtils.FindQueryEventHandlerMethods<TProjection>(this);
         }
-        public virtual Func<TProjection, IAggregateEvent, TProjection> GetEventHandler(IAggregateEvent ev)
-        {
-            if (!_handlers.ContainsKey(ev.Name))
-            {
-                throw new ArgumentException($"The type {this.GetType().Name} does not contain a handler to the event {ev.Name}");
-            }
 
-            return _handlers[ev.Name];
+        public  TProjection InvokeEventMutator(TProjection currentProjection, IAggregateEvent @event)
+        {
+            var handler = GetEventHandler(@event.Name);
+            return handler(currentProjection, @event);
         }
 
-        public virtual bool TryGetEventHandler(IAggregateEvent ev, out Func<TProjection, IAggregateEvent, TProjection> handler)
+        private Func<TProjection, IAggregateEvent, TProjection> GetEventHandler(string eventName)
         {
-            return _handlers.TryGetValue(ev.Name, out handler);
+            if (!_handlers.ContainsKey(eventName))
+            {
+                throw new ArgumentException($"The type {GetType().Name} does not contain a handler to the event {eventName}");
+            }
+
+            return _handlers[eventName];
         }
     }
 }

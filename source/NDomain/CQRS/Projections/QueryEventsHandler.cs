@@ -47,8 +47,7 @@ namespace NDomain.CQRS.Projections
             else
             {
                 // query is sync, just apply the event
-                var eventHandler = mutator.GetEventHandler(ev);
-                query.Data = eventHandler(data, ev);
+                query.Data = mutator.InvokeEventMutator(data, ev);
                 query.Version = ev.SequenceId;
                 query.DateUtc = DateTime.UtcNow;
             }
@@ -82,8 +81,7 @@ namespace NDomain.CQRS.Projections
 
             foreach (var @event in events)
             {
-                var evHandler = mutator.GetEventHandler(@event);
-                data = evHandler(data, @event);
+                data = mutator.InvokeEventMutator(data, @event);
                 lastVersion = @event.SequenceId;
             }
 
